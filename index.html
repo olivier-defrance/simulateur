@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Simulateur Nono v4.3</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI";
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+    .app { max-width: 1100px; margin: auto; padding: 24px 16px 48px; }
+    h1 { font-size: 1.8rem; margin-bottom: 4px; }
+    .subtitle { color: #9ca3af; font-size: .9rem; margin-bottom: 24px; }
+
+    .grid { display: grid; grid-template-columns: 2fr 2fr; gap: 24px; }
+    .card {
+      background: #020617; border-radius: 16px; padding: 20px;
+      border: 1px solid #1e293b; box-shadow: 0 18px 45px rgba(15,23,42,.7);
+    }
+    .card h2 { font-size: 1.1rem; margin: 0 0 12px; }
+
+    .field { margin-bottom: 14px; }
+    label { display: block; font-size: .85rem; margin-bottom: 4px; color: #9ca3af; }
+
+    select, input {
+      width: 100%; padding: 8px 10px; border-radius: 8px;
+      border: 1px solid #1f2933; background: #020617; color: #e5e7eb;
+    }
+    select:focus, input:focus {
+      outline: 2px solid #38bdf8; border-color: #38bdf8;
+    }
+
+    .radios { display: flex; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
+    .radio-pill {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 10px; border-radius: 999px;
+      background: #020617; border: 1px solid #1f2933; cursor: pointer;
+      font-size: .85rem;
+    }
+
+    .btn {
+      width: 100%; margin-top: 8px; padding: 10px 14px; border-radius:999px;
+      border: none; background: linear-gradient(to right,#38bdf8,#6366f1);
+      color: white; font-weight: 600; cursor: pointer;
+      box-shadow: 0 12px 30px rgba(37,99,235,.4);
+    }
+    .btn:disabled { opacity: .6; box-shadow:none; cursor:default; }
+
+    .stat { background:#020617; border:1px solid #111827; padding:12px; border-radius:12px; }
+    .stat-label { font-size:.75rem; color:#9ca3af; margin-bottom:4px; }
+    .stat-value { font-size:1.05rem; font-weight:600; }
+    .results-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-top:12px; }
+
+    .pill {
+      display:inline-flex; padding:4px 10px; border-radius:999px;
+      background:rgba(56,189,248,.08); border:1px solid rgba(56,189,248,.4);
+      color:#e0f2fe; margin-bottom:10px; font-size:.75rem;
+    }
+    .error { margin-top:10px; color:#fca5a5; font-size:.8rem; }
+    .muted { font-size:.8rem; color:#6b7280; margin-top:6px; }
+
+    @media(max-width:900px){
+      .grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <h1>Simulateur Nono v4.3</h1>
+    <div class="subtitle">Simulation basée sur vos données Supabase.</div>
+
+    <div class="grid">
+      <!-- Paramètres -->
+      <div class="card">
+        <h2>Paramètres</h2>
+
+        <div class="field">
+          <label for="capital">Capital alloué (€)</label>
+          <select id="capital">
+            <option value="">Chargement...</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="ddMax">Drawdown maximum accepté (€)</label>
+          <input id="ddMax" type="number" min="0" step="100" placeholder="ex : 1500">
+        </div>
+
+        <div class="field">
+          <label>Objectif</label>
+          <div class="radios">
+            <label class="radio-pill">
+              <input type="radio" name="objectif" value="serenite" checked>
+              Sérénité (Gain/DD)
+            </label>
+            <label class="radio-pill">
+              <input type="radio" name="objectif" value="performance">
+              Performance (Gain)
+            </label>
+          </div>
+        </div>
+
+        <button id="runBtn" class="btn">Lancer la simulation</button>
+        <div id="formError" class="error" style="display:none;"></div>
+      </div>
+
+      <!-- Résultats -->
+      <div class="card">
+        <h2>Résultats</h2>
+
+        <div id="contextPill" class="pill" style="display:none;"></div>
+        <div id="noResult" class="muted">Lancez une simulation pour voir les résultats.</div>
+
+        <div id="results" style="display:none;">
+          <div class="results-grid">
+
+            <div class="stat">
+              <div class="stat-label">Instrument</div>
+              <div id="instrument" class="stat-value">–</div>
+            </div>
+
+            <div class="stat">
+              <div class="stat-label">Gain</div>
+              <div id="gain" class="stat-value">–</div>
+            </div>
+
+            <div class="stat">
+              <div class="stat-label">Drawdown max</div>
+              <div id="dd" class="stat-value">–</div>
+            </div>
+
+            <div class="stat">
+              <div class="stat-label">Gain / Drawdown</div>
+              <div id="gainDd" class="stat-value">–</div>
+            </div>
+
+            <div class="stat">
+              <div class="stat-label">Transactions</div>
+              <div id="trades" class="stat-value">–</div>
+            </div>
+
+            <div class="stat">
+              <div class="stat-label">% Gagnant</div>
+              <div id="winrate" class="stat-value">–</div>
+            </div>
+
+            <div class="stat">
+              <div class="stat-label">Risque</div>
+              <div id="risk" class="stat-value">–</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script type="module">
+  /* -------------------------------
+     CONFIG SUPABASE (à remplir)
+  -------------------------------- */
+  const SUPABASE_URL = "https://supabase.olivdef.fr";
+  const SUPABASE_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc2MzIxNzYwMCwiZXhwIjo0OTE4ODkxMjAwLCJyb2xlIjoiYW5vbiJ9.UagouIBtD8p_dKm3pJX1J2wgaiDfq0vkNo6Cv6FdCbY";
+
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+  const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const TABLE = "ComboIntradayGrafV4-3";
+
+  /* -------------------------------
+    Sélecteurs
+  -------------------------------- */
+  const capitalSelect = document.getElementById("capital");
+  const ddMaxInput = document.getElementById("ddMax");
+  const runBtn = document.getElementById("runBtn");
+  const formError = document.getElementById("formError");
+
+  const instrumentEl = document.getElementById("instrument");
+  const gainEl = document.getElementById("gain");
+  const ddEl = document.getElementById("dd");
+  const gainDdEl = document.getElementById("gainDd");
+  const tradesEl = document.getElementById("trades");
+  const winEl = document.getElementById("winrate");
+  const riskEl = document.getElementById("risk");
+
+  const resultsBox = document.getElementById("results");
+  const noResult = document.getElementById("noResult");
+  const contextPill = document.getElementById("contextPill");
+
+  /* -------------------------------
+      Helpers
+  -------------------------------- */
+  function fmt(v){return v==null?"–":new Intl.NumberFormat("fr-FR").format(v);}
+  function money(v){return v==null?"–":fmt(v)+" €";}
+  function pct(v){return v==null?"–":v.toFixed(1)+" %";}
+
+  /* -------------------------------
+    Charger la liste des capitaux
+  -------------------------------- */
+  async function loadCapitalOptions() {
+    const { data, error } = await db
+      .from(TABLE)
+      .select("Capital", { distinct: true })
+      .order("Capital", { ascending: true });
+
+    if (error) {
+      capitalSelect.innerHTML = "<option value=''>Erreur de chargement</option>";
+      console.error(error);
+      return;
+    }
+
+    capitalSelect.innerHTML = "<option value=''>Choisir...</option>";
+    data.forEach(row => {
+      const opt = document.createElement("option");
+      opt.value = row.Capital;
+      opt.textContent = row.Capital + " €";
+      capitalSelect.appendChild(opt);
+    });
+  }
+
+  /* -------------------------------
+    Simulation
+  -------------------------------- */
+  async function runSimulation() {
+    formError.style.display = "none";
+
+    const capital = Number(capitalSelect.value);
+    const ddMax = Number(ddMaxInput.value);
+    const objectif = document.querySelector("input[name='objectif']:checked").value;
+
+    if (!capital || !ddMax) {
+      formError.textContent = "Merci de renseigner le capital et le drawdown max.";
+      formError.style.display = "block";
+      return;
+    }
+
+    runBtn.disabled = true;
+    runBtn.textContent = "Chargement…";
+
+    let q = db
+      .from(TABLE)
+      .select("*")
+      .eq("Capital", capital)
+      .lte("Drawdown max", ddMax);
+
+    if (objectif === "serenite") {
+      q = q.order("Gain/DD", { ascending: false });
+    } else {
+      q = q.order("Gain", { ascending: false });
+    }
+
+    q = q.limit(1);
+
+    const { data, error } = await q;
+
+    runBtn.disabled = false;
+    runBtn.textContent = "Lancer la simulation";
+
+    if (error) {
+      formError.textContent = "Erreur Supabase : " + error.message;
+      formError.style.display = "block";
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      resultsBox.style.display = "none";
+      contextPill.style.display = "none";
+      noResult.style.display = "block";
+      return;
+    }
+
+    const r = data[0];
+
+    instrumentEl.textContent = r["Instruments"];
+    gainEl.textContent = money(r["Gain"]);
+    ddEl.textContent = money(r["Drawdown max"]);
+    gainDdEl.textContent = r["Gain/DD"]?.toFixed(2) ?? "–";
+    tradesEl.textContent = fmt(r["Transactions"]);
+    winEl.textContent = pct(r["% Gagnant"]);
+    riskEl.textContent = r["Risque"]?.toFixed(2) ?? "–";
+
+    contextPill.style.display = "inline-flex";
+    contextPill.textContent = `Capital ${money(capital)} • DD max ${money(ddMax)}`;
+
+    noResult.style.display = "none";
+    resultsBox.style.display = "block";
+  }
+
+  /* Init */
+  runBtn.addEventListener("click", runSimulation);
+  loadCapitalOptions();
+</script>
+</body>
+</html>
