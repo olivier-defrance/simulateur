@@ -5,161 +5,400 @@
   <title>Simulateur Nono v4.3</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <!-- Chart.js pour le graphique scatter (pas de module, CSP-friendly) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     * { box-sizing: border-box; }
+    :root {
+      --bg: #020617;
+      --bg-elevated: rgba(15,23,42,0.95);
+      --border-subtle: rgba(148,163,184,0.15);
+      --accent: #38bdf8;
+      --accent-soft: rgba(56,189,248,0.1);
+      --accent-strong: #0ea5e9;
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --danger: #f97373;
+    }
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI";
-      background: #0f172a;
-      color: #e5e7eb;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1d2440 0, #020617 40%, #000 100%);
+      color: var(--text-main);
     }
-    .app { max-width: 1100px; margin: auto; padding: 24px 16px 48px; }
-    h1 { font-size: 1.8rem; margin-bottom: 4px; }
-    .subtitle { color: #9ca3af; font-size: .9rem; margin-bottom: 24px; }
+    .app {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 16px 56px;
+    }
 
-    .grid { display: grid; grid-template-columns: 2fr 2fr; gap: 24px; }
-    .card {
-      background: #020617; border-radius: 16px; padding: 20px;
-      border: 1px solid #1e293b; box-shadow: 0 18px 45px rgba(15,23,42,.7);
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 24px;
     }
-    .card h2 { font-size: 1.1rem; margin: 0 0 12px; }
+    .title-block h1 {
+      font-size: 1.9rem;
+      margin: 0 0 4px;
+    }
+    .title-block p {
+      margin: 0;
+      font-size: .9rem;
+      color: var(--text-muted);
+    }
+
+    .badge {
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--accent-soft);
+      background: linear-gradient(135deg, rgba(56,189,248,0.16), rgba(79,70,229,0.06));
+      font-size: .78rem;
+      color: #e0f2fe;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34,197,94,0.25);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0,1.1fr) minmax(0,1.4fr);
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--bg-elevated);
+      border-radius: 18px;
+      padding: 18px 18px 20px;
+      border: 1px solid var(--border-subtle);
+      box-shadow:
+        0 18px 60px rgba(15,23,42,0.7),
+        0 0 0 1px rgba(15,23,42,0.9);
+      backdrop-filter: blur(18px);
+    }
+    .card h2 {
+      font-size: 1.05rem;
+      margin: 0 0 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card h2 span {
+      font-size: .7rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
 
     .field { margin-bottom: 14px; }
-    label { display: block; font-size: .85rem; margin-bottom: 4px; color: #9ca3af; }
+    label {
+      display: flex;
+      justify-content: space-between;
+      font-size: .82rem;
+      margin-bottom: 6px;
+      color: var(--text-muted);
+    }
 
     select, input {
-      width: 100%; padding: 8px 10px; border-radius: 8px;
-      border: 1px solid #1f2933; background: #020617; color: #e5e7eb;
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid #1f2937;
+      background: rgba(15,23,42,0.8);
+      color: var(--text-main);
+      font-size: .9rem;
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
     }
     select:focus, input:focus {
-      outline: 2px solid #38bdf8; border-color: #38bdf8;
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(56,189,248,0.5);
+      background: rgba(15,23,42,1);
     }
 
-    .radios { display: flex; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
-    .radio-pill {
-      display: flex; align-items: center; gap: 6px;
-      padding: 6px 10px; border-radius: 999px;
-      background: #020617; border: 1px solid #1f2933; cursor: pointer;
-      font-size: .85rem;
+    .toggle-group {
+      display: inline-flex;
+      padding: 4px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.9);
+      border: 1px solid #1f2937;
+      gap: 4px;
+    }
+    .toggle-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: .8rem;
+      cursor: pointer;
+      background: transparent;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all .16s ease;
+    }
+    .toggle-btn.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      color: white;
+      box-shadow: 0 8px 26px rgba(56,189,248,0.5);
     }
 
     .btn {
-      width: 100%; margin-top: 8px; padding: 10px 14px; border-radius:999px;
-      border: none; background: linear-gradient(to right,#38bdf8,#6366f1);
-      color: white; font-weight: 600; cursor: pointer;
-      box-shadow: 0 12px 30px rgba(37,99,235,.4);
+      width: 100%;
+      margin-top: 12px;
+      padding: 11px 16px;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg,#22c55e,#16a34a);
+      color: white;
+      font-weight: 600;
+      font-size: .95rem;
+      cursor: pointer;
+      box-shadow: 0 12px 32px rgba(22,163,74,0.6);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform .08s ease, box-shadow .08s ease, filter .12s ease;
     }
-    .btn:disabled { opacity: .6; box-shadow:none; cursor:default; }
+    .btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      filter: brightness(1.06);
+      box-shadow: 0 18px 40px rgba(22,163,74,0.75);
+    }
+    .btn:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: 0 10px 24px rgba(22,163,74,0.6);
+    }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: default;
+      box-shadow: none;
+    }
 
-    .stat { background:#020617; border:1px solid #111827; padding:12px; border-radius:12px; }
-    .stat-label { font-size:.75rem; color:#9ca3af; margin-bottom:4px; }
-    .stat-value { font-size:1.05rem; font-weight:600; }
-    .results-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-top:12px; }
+    .error {
+      margin-top: 10px;
+      color: var(--danger);
+      font-size: .8rem;
+    }
+    .muted { font-size: .8rem; color: var(--text-muted); margin-top: 6px; }
 
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
     .pill {
       display:inline-flex; padding:4px 10px; border-radius:999px;
-      background:rgba(56,189,248,.08); border:1px solid rgba(56,189,248,.4);
-      color:#e0f2fe; margin-bottom:10px; font-size:.75rem;
+      background: var(--accent-soft);
+      border: 1px solid rgba(56,189,248,0.4);
+      color:#e0f2fe;
+      font-size:.75rem;
+      gap: 6px;
+      align-items: center;
     }
-    .error { margin-top:10px; color:#fca5a5; font-size:.8rem; }
-    .muted { font-size:.8rem; color:#6b7280; margin-top:6px; }
+    .pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #38bdf8;
+    }
 
-    @media(max-width:900px){
-      .grid { grid-template-columns:1fr; }
+    .results-grid {
+      display:grid;
+      grid-template-columns: repeat(3,minmax(0,1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .stat {
+      background: radial-gradient(circle at top, rgba(148,163,184,0.16), rgba(15,23,42,0.95));
+      border:1px solid rgba(148,163,184,0.18);
+      padding:10px 11px;
+      border-radius:12px;
+      min-height:64px;
+    }
+    .stat-label { font-size:.72rem; color:var(--text-muted); margin-bottom:4px; }
+    .stat-value { font-size:1rem; font-weight:600; }
+    .stat-sub { font-size:.7rem; color:var(--text-muted); margin-top:2px; }
+
+    .chart-card {
+      margin-top: 14px;
+      background: radial-gradient(circle at top, rgba(15,118,110,0.15), rgba(15,23,42,0.9));
+      border-radius: 14px;
+      border: 1px solid rgba(45,212,191,0.35);
+      padding: 12px 12px 10px;
+    }
+    .chart-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      margin-bottom:6px;
+    }
+    .chart-header span {
+      font-size:.8rem;
+      color: var(--text-muted);
+    }
+    .chart-legend {
+      display:flex;
+      gap:10px;
+      align-items:center;
+      font-size:.7rem;
+      color:var(--text-muted);
+    }
+    .legend-dot {
+      width:9px;
+      height:9px;
+      border-radius:999px;
+    }
+    .legend-dot.all { background:#6b7280; }
+    .legend-dot.best { background:#38bdf8; }
+
+    canvas {
+      width: 100% !important;
+      max-height: 260px;
+    }
+
+    @media(max-width: 960px){
+      .layout { grid-template-columns:1fr; }
+      header { flex-direction:column; align-items:flex-start; }
+      .results-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
+    @media(max-width: 640px){
+      .results-grid { grid-template-columns: repeat(1,minmax(0,1fr)); }
     }
   </style>
 </head>
 
 <body>
   <div class="app">
-    <h1>Simulateur Nono v4.3</h1>
-    <div class="subtitle">Simulation basée sur vos données Supabase (REST API).</div>
+    <header>
+      <div class="title-block">
+        <h1>Simulateur Nono v4.3</h1>
+        <p>Choisissez un capital et un drawdown max. Le moteur récupère la meilleure combinaison dans Supabase.</p>
+      </div>
+      <div>
+        <div class="badge">
+          <span class="badge-dot"></span>
+          Connecté à Supabase (REST)
+        </div>
+      </div>
+    </header>
 
-    <div class="grid">
-
-      <!-- Paramètres -->
-      <div class="card">
-        <h2>Paramètres</h2>
+    <div class="layout">
+      <!-- PARAMÈTRES -->
+      <section class="card">
+        <h2><span>Paramétrage</span> Simulation</h2>
 
         <div class="field">
-          <label for="capital">Capital alloué (€)</label>
+          <label for="capital">
+            <span>Capital alloué (€)</span>
+            <span id="capitalHint"></span>
+          </label>
           <select id="capital">
             <option value="">Chargement...</option>
           </select>
         </div>
 
         <div class="field">
-          <label for="ddMax">Drawdown maximum accepté (€)</label>
+          <label for="ddMax">
+            <span>Drawdown maximum accepté (€)</span>
+          </label>
           <input id="ddMax" type="number" min="0" step="100" placeholder="ex : 1500">
+          <div class="muted">Seules les combinaisons dont le drawdown est inférieur ou égal à cette valeur seront retenues.</div>
         </div>
 
         <div class="field">
-          <label>Objectif</label>
-          <div class="radios">
-            <label class="radio-pill">
-              <input type="radio" name="objectif" value="serenite" checked>
-              Sérénité (Sharpe)
-            </label>
-            <label class="radio-pill">
-              <input type="radio" name="objectif" value="performance">
-              Performance (Gain)
-            </label>
+          <label><span>Objectif</span></label>
+          <div class="toggle-group" id="objectifToggle">
+            <button type="button" class="toggle-btn active" data-objectif="serenite">
+              Sérénité • Sharpe
+            </button>
+            <button type="button" class="toggle-btn" data-objectif="performance">
+              Performance • Gain
+            </button>
           </div>
         </div>
 
-        <button id="runBtn" class="btn">Lancer la simulation</button>
+        <button id="runBtn" class="btn">
+          <span>🚀 Lancer la simulation</span>
+        </button>
         <div id="formError" class="error" style="display:none;"></div>
-      </div>
+      </section>
 
-      <!-- Résultats -->
-      <div class="card">
-        <h2>Résultats</h2>
+      <!-- RÉSULTATS + GRAPHIQUE -->
+      <section class="card">
+        <div class="results-header">
+          <h2><span>Résultat</span> Meilleure combinaison</h2>
+          <div id="contextPill" class="pill" style="display:none;">
+            <span class="pill-dot"></span>
+            <span id="contextText"></span>
+          </div>
+        </div>
 
-        <div id="contextPill" class="pill" style="display:none;"></div>
-        <div id="noResult" class="muted">Lancez une simulation pour voir les résultats.</div>
+        <div id="noResult" class="muted">Configurez vos paramètres puis lancez la simulation pour afficher le meilleur instrument.</div>
 
         <div id="results" style="display:none;">
           <div class="results-grid">
-
             <div class="stat">
               <div class="stat-label">Instrument</div>
               <div id="instrument" class="stat-value">–</div>
+              <div class="stat-sub" id="instrumentSub"></div>
             </div>
-
             <div class="stat">
               <div class="stat-label">Gain</div>
               <div id="gain" class="stat-value">–</div>
             </div>
-
             <div class="stat">
               <div class="stat-label">Drawdown max</div>
               <div id="dd" class="stat-value">–</div>
             </div>
-
             <div class="stat">
               <div class="stat-label">Gain / Drawdown (Sharpe)</div>
               <div id="gainDd" class="stat-value">–</div>
             </div>
-
-            <div class="stat">
-              <div class="stat-label">Transactions</div>
-              <div id="trades" class="stat-value">–</div>
-            </div>
-
             <div class="stat">
               <div class="stat-label">% Gagnant</div>
               <div id="winrate" class="stat-value">–</div>
             </div>
-
+            <div class="stat">
+              <div class="stat-label">Transactions</div>
+              <div id="trades" class="stat-value">–</div>
+              <div class="stat-sub" id="tradesSub"></div>
+            </div>
             <div class="stat">
               <div class="stat-label">Risque</div>
               <div id="risk" class="stat-value">–</div>
             </div>
+          </div>
 
+          <div class="chart-card">
+            <div class="chart-header">
+              <span>Nuage de points : Gain vs Drawdown (capital filtré)</span>
+              <div class="chart-legend">
+                <span class="legend-dot all"></span> <span>Toutes les combinaisons</span>
+                <span class="legend-dot best"></span> <span>Meilleure</span>
+              </div>
+            </div>
+            <canvas id="resultsChart"></canvas>
           </div>
         </div>
-
-      </div>
+      </section>
     </div>
   </div>
 
@@ -180,16 +419,24 @@
   const formError = document.getElementById("formError");
 
   const instrumentEl = document.getElementById("instrument");
+  const instrumentSubEl = document.getElementById("instrumentSub");
   const gainEl = document.getElementById("gain");
   const ddEl = document.getElementById("dd");
   const gainDdEl = document.getElementById("gainDd");
   const tradesEl = document.getElementById("trades");
+  const tradesSubEl = document.getElementById("tradesSub");
   const winEl = document.getElementById("winrate");
   const riskEl = document.getElementById("risk");
 
   const resultsBox = document.getElementById("results");
   const noResult = document.getElementById("noResult");
   const contextPill = document.getElementById("contextPill");
+  const contextText = document.getElementById("contextText");
+  const capitalHint = document.getElementById("capitalHint");
+  const objectifToggle = document.getElementById("objectifToggle");
+
+  let currentObjectif = "serenite";
+  let chartInstance = null;
 
   /* -------------------------------
       Helpers
@@ -215,18 +462,19 @@
 
   /* -------------------------------
     Charger la liste des capitaux
-    (REST, dédoublonnage côté client)
   -------------------------------- */
   async function loadCapitalOptions() {
     try {
       const rows = await supaGet(`/rest/v1/${TABLE}?select=Capital`);
-
       const set = new Set();
       rows.forEach(r => {
         if (typeof r.Capital === "number") set.add(r.Capital);
       });
-
       const values = Array.from(set).sort((a,b) => a - b);
+
+      if (values.length) {
+        capitalHint.textContent = `${values[0]} – ${values[values.length-1]} €`;
+      }
 
       capitalSelect.innerHTML = "<option value=''>Choisir...</option>";
       values.forEach(v => {
@@ -238,7 +486,111 @@
     } catch (err) {
       console.error(err);
       capitalSelect.innerHTML = "<option value=''>Erreur de chargement</option>";
+      capitalHint.textContent = "";
     }
+  }
+
+  /* -------------------------------
+    Gestion des boutons Objectif
+  -------------------------------- */
+  objectifToggle.addEventListener("click", (e) => {
+    const btn = e.target.closest(".toggle-btn");
+    if (!btn) return;
+    const obj = btn.getAttribute("data-objectif");
+    if (!obj) return;
+
+    currentObjectif = obj;
+    document.querySelectorAll(".toggle-btn").forEach(b => {
+      b.classList.toggle("active", b === btn);
+    });
+  });
+
+  /* -------------------------------
+    Rendu du graphique
+  -------------------------------- */
+  function renderChart(rows, bestRow) {
+    const canvas = document.getElementById("resultsChart");
+    if (!canvas || !rows || !rows.length) {
+      if (chartInstance) {
+        chartInstance.destroy();
+        chartInstance = null;
+      }
+      return;
+    }
+
+    const allPoints = rows.map(r => ({
+      x: r.Drawdown,
+      y: r.Gain
+    }));
+
+    const bestPoint = bestRow ? {
+      x: bestRow.Drawdown,
+      y: bestRow.Gain
+    } : null;
+
+    const datasets = [{
+      label: "Combinaisons",
+      data: allPoints,
+      pointRadius: 3,
+      pointHoverRadius: 5,
+      pointBackgroundColor: "#6b7280",
+      pointBorderColor: "#6b7280",
+    }];
+
+    if (bestPoint) {
+      datasets.push({
+        label: "Meilleure combinaison",
+        data: [bestPoint],
+        pointRadius: 6,
+        pointHoverRadius: 7,
+        pointBackgroundColor: "#38bdf8",
+        pointBorderColor: "#38bdf8",
+      });
+    }
+
+    const maxGain = Math.max(...rows.map(r => r.Gain || 0));
+    const maxDD = Math.max(...rows.map(r => r.Drawdown || 0));
+
+    if (chartInstance) {
+      chartInstance.destroy();
+    }
+
+    chartInstance = new Chart(canvas.getContext("2d"), {
+      type: "scatter",
+      data: { datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            title: { display: true, text: "Drawdown (€)", color: "#e5e7eb" },
+            ticks: { color: "#9ca3af" },
+            grid: { color: "rgba(148,163,184,0.18)" },
+            suggestedMin: 0,
+            suggestedMax: maxDD * 1.1
+          },
+          y: {
+            title: { display: true, text: "Gain (€)", color: "#e5e7eb" },
+            ticks: { color: "#9ca3af" },
+            grid: { color: "rgba(148,163,184,0.15)" },
+            suggestedMin: 0,
+            suggestedMax: maxGain * 1.1
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const r = rows[ctx.dataIndex];
+                if (!r) return `Gain: ${ctx.parsed.y}, DD: ${ctx.parsed.x}`;
+                return `${r.Actif} — Gain: ${fmt(r.Gain)} €, DD: ${fmt(r.Drawdown)} €`;
+              }
+            }
+          }
+        }
+      }
+    });
   }
 
   /* -------------------------------
@@ -249,7 +601,6 @@
 
     const capital = Number(capitalSelect.value);
     const ddMax = Number(ddMaxInput.value);
-    const objectif = document.querySelector("input[name='objectif']:checked").value;
 
     if (!capital || !ddMax) {
       formError.textContent = "Merci de renseigner le capital et le drawdown max.";
@@ -260,16 +611,11 @@
     runBtn.disabled = true;
     runBtn.textContent = "Chargement…";
 
-    // Construction de l’URL REST Supabase
     const filters = [
       `Capital=eq.${capital}`,
       `Drawdown=lte.${ddMax}`,
-      `select=*`
+      `select=Actif,Capital,Gain,Drawdown,Sharpe,pGagnant,NbTrade,pRisque`
     ];
-
-    const orderCol = (objectif === "serenite") ? "Sharpe" : "Gain";
-    filters.push(`order=${orderCol}.desc`);
-    filters.push(`limit=1`);
 
     const path = `/rest/v1/${TABLE}?` + filters.join("&");
 
@@ -283,24 +629,44 @@
         resultsBox.style.display = "none";
         contextPill.style.display = "none";
         noResult.style.display = "block";
+        if (chartInstance) {
+          chartInstance.destroy();
+          chartInstance = null;
+        }
         return;
       }
 
-      const r = data[0];
+      let best = null;
+      if (currentObjectif === "serenite") {
+        best = data.reduce((acc, r) =>
+          (acc == null || (r.Sharpe ?? -Infinity) > (acc.Sharpe ?? -Infinity)) ? r : acc,
+        null);
+      } else {
+        best = data.reduce((acc, r) =>
+          (acc == null || (r.Gain ?? -Infinity) > (acc.Gain ?? -Infinity)) ? r : acc,
+        null);
+      }
 
-      instrumentEl.textContent = r.Actif ?? "–";
-      gainEl.textContent = money(r.Gain);
-      ddEl.textContent = money(r.Drawdown);
-      gainDdEl.textContent = (r.Sharpe != null) ? r.Sharpe.toFixed(2) : "–";
-      tradesEl.textContent = fmt(r.NbTrade);
-      winEl.textContent = (r.pGagnant != null) ? pct(r.pGagnant) : "–";
-      riskEl.textContent = (r.pRisque != null) ? r.pRisque.toFixed(2) : "–";
+      instrumentEl.textContent = best.Actif ?? "–";
+      gainEl.textContent = money(best.Gain);
+      ddEl.textContent = money(best.Drawdown);
+      gainDdEl.textContent = (best.Sharpe != null) ? best.Sharpe.toFixed(2) : "–";
+      tradesEl.textContent = fmt(best.NbTrade);
+      tradesSubEl.textContent = best.NbTrade ? `${best.NbTrade} trades totaux` : "";
+      winEl.textContent = (best.pGagnant != null) ? pct(best.pGagnant) : "–";
+      riskEl.textContent = (best.pRisque != null) ? best.pRisque.toFixed(2) : "–";
+
+      instrumentSubEl.textContent = currentObjectif === "serenite"
+        ? "Instrument le plus stable (Sharpe max)."
+        : "Instrument le plus performant (Gain max).";
 
       contextPill.style.display = "inline-flex";
-      contextPill.textContent = `Capital ${money(capital)} • DD max ${money(ddMax)}`;
+      contextText.textContent = `Capital ${money(capital)} • DD max ${money(ddMax)}`;
 
       noResult.style.display = "none";
       resultsBox.style.display = "block";
+
+      renderChart(data, best);
 
     } catch (err) {
       console.error(err);
