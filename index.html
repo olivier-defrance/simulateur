@@ -5,185 +5,312 @@
   <title>Simulateur Nono v4.3</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- Chart.js pour le graphique scatter (pas de module, CSP-friendly) -->
+  <!-- Chart.js pour le graphique (REST-friendly, pas de modules) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     * { box-sizing: border-box; }
+
     :root {
-      --bg: #020617;
-      --bg-elevated: rgba(15,23,42,0.95);
-      --border-subtle: rgba(148,163,184,0.15);
-      --accent: #38bdf8;
-      --accent-soft: rgba(56,189,248,0.1);
-      --accent-strong: #0ea5e9;
+      --bg-gradient-top: #e0f2fe;
+      --bg-gradient-bottom: #f8fafc;
+
+      --card-bg: #ffffffee;
+      --card-border: #e2e8f0;
+      --card-shadow: 0 12px 28px rgba(0,0,0,.05);
+
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --accent: #0ea5e9;
+      --accent-soft: #bae6fd;
+
+      --danger: #dc2626;
+
+      --chip-bg: #cffafe;
+      --chip-border: #7dd3fc;
+
+      --input-bg: #ffffff;
+      --input-border: #cbd5e1;
+      --input-focus-border: #38bdf8;
+      --input-focus-ring: #bae6fd;
+
+      --chart-grid: #e2e8f0;
+      --chart-axis: #475569;
+
+      --stat-bg: #ffffff;
+      --stat-border: #e2e8f0;
+
+      --badge-bg: #bae6fd;
+      --badge-border: #7dd3fc;
+      --badge-text: #0369a1;
+    }
+
+    /* Mode sombre */
+    body.dark {
+      --bg-gradient-top: #0f172a;
+      --bg-gradient-bottom: #020617;
+
+      --card-bg: #020617f5;
+      --card-border: #1f2937;
+      --card-shadow: 0 18px 32px rgba(0,0,0,.4);
+
       --text-main: #e5e7eb;
       --text-muted: #9ca3af;
+
+      --primary: #38bdf8;
+      --primary-dark: #0284c7;
+      --accent: #22d3ee;
+      --accent-soft: rgba(56,189,248,0.15);
+
       --danger: #f97373;
+
+      --chip-bg: rgba(15,23,42,0.9);
+      --chip-border: rgba(56,189,248,0.5);
+
+      --input-bg: #020617;
+      --input-border: #1f2937;
+      --input-focus-border: #38bdf8;
+      --input-focus-ring: rgba(56,189,248,0.4);
+
+      --chart-grid: #1f2933;
+      --chart-axis: #cbd5f5;
+
+      --stat-bg: #020617;
+      --stat-border: #1f2937;
+
+      --badge-bg: rgba(8,47,73,0.8);
+      --badge-border: #0ea5e9;
+      --badge-text: #e0f2fe;
     }
+
     body {
       margin: 0;
-      min-height: 100vh;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #1d2440 0, #020617 40%, #000 100%);
+      background: linear-gradient(to bottom, var(--bg-gradient-top), var(--bg-gradient-bottom));
       color: var(--text-main);
+      transition: background .25s ease, color .25s ease;
     }
+
     .app {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 24px 16px 56px;
+      max-width: 1300px;
+      margin: auto;
+      padding: 22px 16px 60px;
     }
 
     header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      gap: 16px;
-      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 26px;
     }
+
     .title-block h1 {
-      font-size: 1.9rem;
       margin: 0 0 4px;
+      font-size: 1.9rem;
+      color: var(--text-main);
+      font-weight: 700;
     }
     .title-block p {
       margin: 0;
-      font-size: .9rem;
       color: var(--text-muted);
+      font-size: .9rem;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
     .badge {
       padding: 6px 12px;
       border-radius: 999px;
-      border: 1px solid var(--accent-soft);
-      background: linear-gradient(135deg, rgba(56,189,248,0.16), rgba(79,70,229,0.06));
-      font-size: .78rem;
-      color: #e0f2fe;
-      display: inline-flex;
+      font-size: .75rem;
+      color: var(--badge-text);
+      background: var(--badge-bg);
+      border: 1px solid var(--badge-border);
+      display: flex;
       align-items: center;
       gap: 6px;
-      white-space: nowrap;
     }
     .badge-dot {
       width: 7px;
       height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 0 3px rgba(34,197,94,.3);
+    }
+
+    .theme-toggle {
       border-radius: 999px;
-      background: #22c55e;
-      box-shadow: 0 0 0 4px rgba(34,197,94,0.25);
+      border: 1px solid var(--card-border);
+      background: var(--card-bg);
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: .8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+      box-shadow: 0 4px 10px rgba(0,0,0,.06);
+    }
+
+    .theme-toggle-icon {
+      font-size: 1rem;
     }
 
     .layout {
       display: grid;
-      grid-template-columns: minmax(0,1.1fr) minmax(0,1.4fr);
-      gap: 20px;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 22px;
     }
 
     .card {
-      background: var(--bg-elevated);
-      border-radius: 18px;
-      padding: 18px 18px 20px;
-      border: 1px solid var(--border-subtle);
-      box-shadow:
-        0 18px 60px rgba(15,23,42,0.7),
-        0 0 0 1px rgba(15,23,42,0.9);
-      backdrop-filter: blur(18px);
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 18px;
+      border: 1px solid var(--card-border);
+      box-shadow: var(--card-shadow);
+      backdrop-filter: blur(12px);
+      transition: background .25s ease, border-color .25s ease, box-shadow .25s ease;
     }
+
     .card h2 {
-      font-size: 1.05rem;
-      margin: 0 0 14px;
+      margin: 0 0 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 1.1rem;
+      color: var(--text-main);
+    }
+
+    .card h2 .subtitle {
+      font-size: .75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .field { margin-bottom: 16px; }
+
+    label {
+      font-size: .85rem;
+      margin-bottom: 4px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 9px 10px;
+      font-size: .92rem;
+      border-radius: 8px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-main);
+      transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--input-focus-border);
+      box-shadow: 0 0 0 2px var(--input-focus-ring);
+      background: var(--card-bg);
+    }
+
+    .input-inline {
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    .card h2 span {
-      font-size: .7rem;
-      font-weight: 500;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: .08em;
-    }
 
-    .field { margin-bottom: 14px; }
-    label {
+    .slider-wrap {
       display: flex;
-      justify-content: space-between;
-      font-size: .82rem;
-      margin-bottom: 6px;
-      color: var(--text-muted);
+      align-items: center;
+      gap: 8px;
     }
-
-    select, input {
-      width: 100%;
-      padding: 8px 10px;
-      border-radius: 10px;
-      border: 1px solid #1f2937;
-      background: rgba(15,23,42,0.8);
-      color: var(--text-main);
-      font-size: .9rem;
-      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
-    }
-    select:focus, input:focus {
+    .slider-wrap input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 6px;
+      border-radius: 999px;
+      background: #e5e7eb;
       outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(56,189,248,0.5);
-      background: rgba(15,23,42,1);
+    }
+    .slider-wrap input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.25);
     }
 
     .toggle-group {
-      display: inline-flex;
+      display: flex;
+      gap: 6px;
       padding: 4px;
+      background: rgba(148,163,184,.12);
       border-radius: 999px;
-      background: rgba(15,23,42,0.9);
-      border: 1px solid #1f2937;
-      gap: 4px;
+      border: 1px solid var(--card-border);
     }
+
     .toggle-btn {
       border: none;
-      border-radius: 999px;
       padding: 6px 12px;
-      font-size: .8rem;
-      cursor: pointer;
+      border-radius: 999px;
       background: transparent;
+      font-size: .82rem;
+      cursor: pointer;
       color: var(--text-muted);
       display: flex;
       align-items: center;
-      gap: 4px;
-      transition: all .16s ease;
+      gap: 6px;
+      transition: background .15s, color .15s, box-shadow .15s;
     }
+    .toggle-btn-icon { font-size: .9rem; }
+
     .toggle-btn.active {
-      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-      color: white;
-      box-shadow: 0 8px 26px rgba(56,189,248,0.5);
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(59,130,246,0.4);
     }
 
     .btn {
       width: 100%;
+      padding: 10px 16px;
       margin-top: 12px;
-      padding: 11px 16px;
       border-radius: 999px;
       border: none;
-      background: linear-gradient(135deg,#22c55e,#16a34a);
+      background: var(--primary);
       color: white;
-      font-weight: 600;
       font-size: .95rem;
+      font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 12px 32px rgba(22,163,74,0.6);
+      box-shadow: 0 6px 18px rgba(59,130,246,0.4);
+      transition: transform .1s, box-shadow .1s, background .15s;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      transition: transform .08s ease, box-shadow .08s ease, filter .12s ease;
+      gap: 6px;
     }
     .btn:hover:not(:disabled) {
       transform: translateY(-1px);
-      filter: brightness(1.06);
-      box-shadow: 0 18px 40px rgba(22,163,74,0.75);
-    }
-    .btn:active:not(:disabled) {
-      transform: translateY(0);
-      box-shadow: 0 10px 24px rgba(22,163,74,0.6);
+      box-shadow: 0 8px 20px rgba(59,130,246,0.5);
+      background: var(--primary-dark);
     }
     .btn:disabled {
-      opacity: 0.6;
+      opacity: .6;
       cursor: default;
       box-shadow: none;
     }
@@ -193,8 +320,8 @@
       color: var(--danger);
       font-size: .8rem;
     }
-    .muted { font-size: .8rem; color: var(--text-muted); margin-top: 6px; }
 
+    /* Résultats */
     .results-header {
       display: flex;
       justify-content: space-between;
@@ -202,86 +329,143 @@
       gap: 8px;
       margin-bottom: 8px;
     }
+
     .pill {
-      display:inline-flex; padding:4px 10px; border-radius:999px;
-      background: var(--accent-soft);
-      border: 1px solid rgba(56,189,248,0.4);
-      color:#e0f2fe;
-      font-size:.75rem;
-      gap: 6px;
+      display: inline-flex;
       align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      font-size: .75rem;
+      background: var(--chip-bg);
+      border-radius: 999px;
+      border: 1px solid var(--chip-border);
+      color: var(--badge-text);
     }
     .pill-dot {
       width: 6px;
       height: 6px;
-      border-radius: 999px;
-      background: #38bdf8;
+      background: var(--accent);
+      border-radius: 50%;
     }
 
-    .results-grid {
-      display:grid;
-      grid-template-columns: repeat(3,minmax(0,1fr));
-      gap: 12px;
+    #noResult {
+      font-size: .85rem;
+      color: var(--text-muted);
       margin-top: 10px;
     }
 
-    .stat {
-      background: radial-gradient(circle at top, rgba(148,163,184,0.16), rgba(15,23,42,0.95));
-      border:1px solid rgba(148,163,184,0.18);
-      padding:10px 11px;
-      border-radius:12px;
-      min-height:64px;
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 12px;
+      margin-top: 8px;
     }
-    .stat-label { font-size:.72rem; color:var(--text-muted); margin-bottom:4px; }
-    .stat-value { font-size:1rem; font-weight:600; }
-    .stat-sub { font-size:.7rem; color:var(--text-muted); margin-top:2px; }
 
+    .stat {
+      border-radius: 12px;
+      padding: 12px;
+      background: var(--stat-bg);
+      border: 1px solid var(--stat-border);
+      box-shadow: 0 3px 8px rgba(0,0,0,.04);
+      transition: transform .12s, box-shadow .12s;
+    }
+    .stat:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 12px rgba(0,0,0,.06);
+    }
+    .stat-label {
+      font-size: .75rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .stat-value {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    /* Graphique */
     .chart-card {
-      margin-top: 14px;
-      background: radial-gradient(circle at top, rgba(15,118,110,0.15), rgba(15,23,42,0.9));
+      margin-top: 18px;
+      padding: 14px;
       border-radius: 14px;
-      border: 1px solid rgba(45,212,191,0.35);
-      padding: 12px 12px 10px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      box-shadow: 0 6px 16px rgba(0,0,0,.06);
     }
     .chart-header {
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:8px;
-      margin-bottom:6px;
-    }
-    .chart-header span {
-      font-size:.8rem;
+      display: flex;
+      justify-content: space-between;
+      font-size: .8rem;
       color: var(--text-muted);
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+      gap: 8px;
     }
     .chart-legend {
-      display:flex;
-      gap:10px;
-      align-items:center;
-      font-size:.7rem;
-      color:var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: .75rem;
     }
     .legend-dot {
-      width:9px;
-      height:9px;
-      border-radius:999px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
     }
-    .legend-dot.all { background:#6b7280; }
-    .legend-dot.best { background:#38bdf8; }
+    .legend-dot.all { background: #94a3b8; }
+    .legend-dot.best { background: var(--primary); }
 
-    canvas {
-      width: 100% !important;
-      max-height: 260px;
+    canvas { width: 100% !important; max-height: 260px; }
+
+    /* Top 5 */
+    .top-card {
+      margin-top: 16px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(148,163,184,0.3);
+    }
+    .top-title {
+      font-size: .85rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .top-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .78rem;
+    }
+    .top-table th,
+    .top-table td {
+      padding: 4px 6px;
+      text-align: left;
+    }
+    .top-table th {
+      color: var(--text-muted);
+      font-weight: 500;
+      border-bottom: 1px solid rgba(148,163,184,.4);
+    }
+    .top-table tr {
+      cursor: pointer;
+      transition: background .12s;
+    }
+    .top-table tr:hover {
+      background: rgba(148,163,184,0.16);
+    }
+    .top-table tr.selected {
+      background: rgba(59,130,246,0.12);
     }
 
-    @media(max-width: 960px){
-      .layout { grid-template-columns:1fr; }
-      header { flex-direction:column; align-items:flex-start; }
-      .results-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    /* Responsive */
+    @media(max-width: 980px){
+      .layout { grid-template-columns: 1fr; }
+      .results-grid { grid-template-columns: 1fr 1fr; }
     }
     @media(max-width: 640px){
-      .results-grid { grid-template-columns: repeat(1,minmax(0,1fr)); }
+      .results-grid { grid-template-columns: 1fr; }
     }
+
   </style>
 </head>
 
@@ -290,12 +474,16 @@
     <header>
       <div class="title-block">
         <h1>Simulateur Nono v4.3</h1>
-        <p>Choisissez un capital et un drawdown max. Le moteur récupère la meilleure combinaison dans Supabase.</p>
+        <p>Visualisez l’instrument optimal selon votre capital et votre tolérance au risque.</p>
       </div>
-      <div>
+      <div class="header-right">
+        <button id="themeToggle" class="theme-toggle" type="button">
+          <span class="theme-toggle-icon">🌞</span>
+          <span>Mode clair</span>
+        </button>
         <div class="badge">
           <span class="badge-dot"></span>
-          Connecté à Supabase (REST)
+          <span>Connecté à Supabase (REST)</span>
         </div>
       </div>
     </header>
@@ -303,12 +491,14 @@
     <div class="layout">
       <!-- PARAMÈTRES -->
       <section class="card">
-        <h2><span>Paramétrage</span> Simulation</h2>
+        <h2>
+          <span class="subtitle">Paramétrage</span>
+          Choisissez vos contraintes
+        </h2>
 
         <div class="field">
           <label for="capital">
             <span>Capital alloué (€)</span>
-            <span id="capitalHint"></span>
           </label>
           <select id="capital">
             <option value="">Chargement...</option>
@@ -317,20 +507,25 @@
 
         <div class="field">
           <label for="ddMax">
-            <span>Drawdown maximum accepté (€)</span>
+            <span>Drawdown max accepté (€)</span>
+            <span id="ddValueLabel"></span>
           </label>
-          <input id="ddMax" type="number" min="0" step="100" placeholder="ex : 1500">
-          <div class="muted">Seules les combinaisons dont le drawdown est inférieur ou égal à cette valeur seront retenues.</div>
+          <div class="slider-wrap">
+            <input id="ddSlider" type="range" min="0" max="5000" step="100" value="1500">
+            <input id="ddMax" type="number" min="0" step="100" style="width:90px;" value="1500">
+          </div>
         </div>
 
         <div class="field">
-          <label><span>Objectif</span></label>
+          <label>Objectif</label>
           <div class="toggle-group" id="objectifToggle">
             <button type="button" class="toggle-btn active" data-objectif="serenite">
-              Sérénité • Sharpe
+              <span class="toggle-btn-icon">🧘‍♂️</span>
+              <span>Sérénité (Sharpe)</span>
             </button>
             <button type="button" class="toggle-btn" data-objectif="performance">
-              Performance • Gain
+              <span class="toggle-btn-icon">⚡</span>
+              <span>Performance (Gain)</span>
             </button>
           </div>
         </div>
@@ -341,27 +536,32 @@
         <div id="formError" class="error" style="display:none;"></div>
       </section>
 
-      <!-- RÉSULTATS + GRAPHIQUE -->
+      <!-- RÉSULTATS + CHART + TOP 5 -->
       <section class="card">
         <div class="results-header">
-          <h2><span>Résultat</span> Meilleure combinaison</h2>
+          <h2>
+            <span class="subtitle">Résultat</span>
+            Instrument optimal
+          </h2>
           <div id="contextPill" class="pill" style="display:none;">
             <span class="pill-dot"></span>
             <span id="contextText"></span>
           </div>
         </div>
 
-        <div id="noResult" class="muted">Configurez vos paramètres puis lancez la simulation pour afficher le meilleur instrument.</div>
+        <div id="noResult">
+          Aucune simulation pour le moment. Choisissez un capital, un drawdown max, puis lancez la simulation.
+        </div>
 
         <div id="results" style="display:none;">
+
           <div class="results-grid">
             <div class="stat">
               <div class="stat-label">Instrument</div>
               <div id="instrument" class="stat-value">–</div>
-              <div class="stat-sub" id="instrumentSub"></div>
             </div>
             <div class="stat">
-              <div class="stat-label">Gain</div>
+              <div class="stat-label">Gain total</div>
               <div id="gain" class="stat-value">–</div>
             </div>
             <div class="stat">
@@ -369,17 +569,16 @@
               <div id="dd" class="stat-value">–</div>
             </div>
             <div class="stat">
-              <div class="stat-label">Gain / Drawdown (Sharpe)</div>
+              <div class="stat-label">Sharpe</div>
               <div id="gainDd" class="stat-value">–</div>
             </div>
             <div class="stat">
-              <div class="stat-label">% Gagnant</div>
+              <div class="stat-label">% gagnant</div>
               <div id="winrate" class="stat-value">–</div>
             </div>
             <div class="stat">
               <div class="stat-label">Transactions</div>
               <div id="trades" class="stat-value">–</div>
-              <div class="stat-sub" id="tradesSub"></div>
             </div>
             <div class="stat">
               <div class="stat-label">Risque</div>
@@ -389,203 +588,165 @@
 
           <div class="chart-card">
             <div class="chart-header">
-              <span>Nuage de points : Gain vs Drawdown (capital filtré)</span>
+              <span>Nuage de points : Gain vs Drawdown</span>
               <div class="chart-legend">
-                <span class="legend-dot all"></span> <span>Toutes les combinaisons</span>
-                <span class="legend-dot best"></span> <span>Meilleure</span>
+                <span class="legend-dot all"></span><span>Tous</span>
+                <span class="legend-dot best"></span><span>Optimal</span>
               </div>
             </div>
             <canvas id="resultsChart"></canvas>
           </div>
+
+          <div class="top-card">
+            <div class="top-title">
+              <span>Top 5 des combinaisons (selon l’objectif)</span>
+              <span style="font-size:.75rem;color:var(--text-muted);">Cliquez une ligne pour la détailler</span>
+            </div>
+            <div style="overflow-x:auto;">
+              <table class="top-table">
+                <thead>
+                  <tr>
+                    <th>Instrument</th>
+                    <th>Gain</th>
+                    <th>DD</th>
+                    <th>Sharpe</th>
+                    <th>%G</th>
+                    <th>Trades</th>
+                  </tr>
+                </thead>
+                <tbody id="topTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
       </section>
     </div>
   </div>
 
 <script>
-  /* -------------------------------
-     CONFIG SUPABASE (REST)
-  -------------------------------- */
   const SUPABASE_URL = "https://supabase.olivdef.fr";
   const SUPABASE_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc2MzIxNzYwMCwiZXhwIjo0OTE4ODkxMjAwLCJyb2xlIjoiYW5vbiJ9.UagouIBtD8p_dKm3pJX1J2wgaiDfq0vkNo6Cv6FdCbY";
   const TABLE = "DataIntradayGrafV4-3";
 
-  /* -------------------------------
-    Sélecteurs
-  -------------------------------- */
   const capitalSelect = document.getElementById("capital");
   const ddMaxInput = document.getElementById("ddMax");
+  const ddSlider = document.getElementById("ddSlider");
+  const ddValueLabel = document.getElementById("ddValueLabel");
   const runBtn = document.getElementById("runBtn");
   const formError = document.getElementById("formError");
+  const objectifToggle = document.getElementById("objectifToggle");
+  const noResult = document.getElementById("noResult");
+  const resultsBox = document.getElementById("results");
+  const contextPill = document.getElementById("contextPill");
+  const contextText = document.getElementById("contextText");
+  const themeToggle = document.getElementById("themeToggle");
 
   const instrumentEl = document.getElementById("instrument");
-  const instrumentSubEl = document.getElementById("instrumentSub");
   const gainEl = document.getElementById("gain");
   const ddEl = document.getElementById("dd");
   const gainDdEl = document.getElementById("gainDd");
-  const tradesEl = document.getElementById("trades");
-  const tradesSubEl = document.getElementById("tradesSub");
   const winEl = document.getElementById("winrate");
+  const tradesEl = document.getElementById("trades");
   const riskEl = document.getElementById("risk");
 
-  const resultsBox = document.getElementById("results");
-  const noResult = document.getElementById("noResult");
-  const contextPill = document.getElementById("contextPill");
-  const contextText = document.getElementById("contextText");
-  const capitalHint = document.getElementById("capitalHint");
-  const objectifToggle = document.getElementById("objectifToggle");
+  const topTableBody = document.getElementById("topTableBody");
 
   let currentObjectif = "serenite";
   let chartInstance = null;
+  let lastRows = [];
+  let lastBestIndex = null;
 
-  /* -------------------------------
-      Helpers
-  -------------------------------- */
-  function fmt(v){return v==null?"–":new Intl.NumberFormat("fr-FR").format(v);}
-  function money(v){return v==null?"–":fmt(v)+" €";}
-  function pct(v){return v==null?"–":v.toFixed(1)+" %";}
+  function fmt(v){ return v==null ? "–" : new Intl.NumberFormat("fr-FR").format(v); }
+  function money(v){ return v==null ? "–" : fmt(v)+" €"; }
+  function pct(v){ return v==null ? "–" : v.toFixed(1)+" %"; }
 
   async function supaGet(path) {
-    const resp = await fetch(SUPABASE_URL + path, {
+    const r = await fetch(SUPABASE_URL + path, {
       headers: {
         apikey: SUPABASE_KEY,
-        Authorization: "Bearer " + SUPABASE_KEY,
-        "Content-Type": "application/json"
+        Authorization: "Bearer " + SUPABASE_KEY
       }
     });
-    if (!resp.ok) {
-      const text = await resp.text();
-      throw new Error(`HTTP ${resp.status} – ${text}`);
-    }
-    return resp.json();
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return r.json();
   }
 
-  /* -------------------------------
-    Charger la liste des capitaux
-  -------------------------------- */
   async function loadCapitalOptions() {
     try {
       const rows = await supaGet(`/rest/v1/${TABLE}?select=Capital`);
-      const set = new Set();
-      rows.forEach(r => {
-        if (typeof r.Capital === "number") set.add(r.Capital);
-      });
-      const values = Array.from(set).sort((a,b) => a - b);
-
-      if (values.length) {
-        capitalHint.textContent = `${values[0]} – ${values[values.length-1]} €`;
-      }
-
+      const uniq = Array.from(new Set(rows.map(r => r.Capital))).sort((a,b)=>a-b);
       capitalSelect.innerHTML = "<option value=''>Choisir...</option>";
-      values.forEach(v => {
+      uniq.forEach(v => {
         const opt = document.createElement("option");
         opt.value = v;
         opt.textContent = v + " €";
         capitalSelect.appendChild(opt);
       });
-    } catch (err) {
-      console.error(err);
-      capitalSelect.innerHTML = "<option value=''>Erreur de chargement</option>";
-      capitalHint.textContent = "";
+      restoreSettings();
+    } catch(e) {
+      console.error(e);
+      capitalSelect.innerHTML = "<option>Erreur de chargement</option>";
     }
   }
 
-  /* -------------------------------
-    Gestion des boutons Objectif
-  -------------------------------- */
-  objectifToggle.addEventListener("click", (e) => {
-    const btn = e.target.closest(".toggle-btn");
-    if (!btn) return;
-    const obj = btn.getAttribute("data-objectif");
-    if (!obj) return;
-
-    currentObjectif = obj;
-    document.querySelectorAll(".toggle-btn").forEach(b => {
-      b.classList.toggle("active", b === btn);
-    });
-  });
-
-  /* -------------------------------
-    Rendu du graphique
-  -------------------------------- */
-  function renderChart(rows, bestRow) {
-    const canvas = document.getElementById("resultsChart");
-    if (!canvas || !rows || !rows.length) {
-      if (chartInstance) {
-        chartInstance.destroy();
-        chartInstance = null;
-      }
-      return;
+  function syncDD(fromSlider) {
+    if (fromSlider) {
+      ddMaxInput.value = ddSlider.value;
+    } else {
+      const v = Number(ddMaxInput.value) || 0;
+      ddSlider.value = v;
     }
+    ddValueLabel.textContent = ddMaxInput.value ? ddMaxInput.value + " €" : "";
+  }
 
-    const allPoints = rows.map(r => ({
-      x: r.Drawdown,
-      y: r.Gain
-    }));
+  function renderChart(rows, bestIndex) {
+    const canvas = document.getElementById("resultsChart");
+    if (!canvas) return;
+    if (chartInstance) chartInstance.destroy();
 
-    const bestPoint = bestRow ? {
-      x: bestRow.Drawdown,
-      y: bestRow.Gain
-    } : null;
+    if (!rows || !rows.length) return;
 
+    const allPoints = rows.map(r => ({ x: r.Drawdown, y: r.Gain }));
     const datasets = [{
-      label: "Combinaisons",
+      label: "Toutes",
       data: allPoints,
-      pointRadius: 3,
-      pointHoverRadius: 5,
-      pointBackgroundColor: "#6b7280",
-      pointBorderColor: "#6b7280",
+      pointRadius: 4,
+      pointBackgroundColor: "#94a3b8"
     }];
 
-    if (bestPoint) {
+    if (bestIndex != null && rows[bestIndex]) {
       datasets.push({
-        label: "Meilleure combinaison",
-        data: [bestPoint],
-        pointRadius: 6,
-        pointHoverRadius: 7,
-        pointBackgroundColor: "#38bdf8",
-        pointBorderColor: "#38bdf8",
+        label: "Optimal",
+        data: [{ x: rows[bestIndex].Drawdown, y: rows[bestIndex].Gain }],
+        pointRadius: 8,
+        pointBackgroundColor: getComputedStyle(document.documentElement)
+          .getPropertyValue("--primary").trim()
       });
     }
 
-    const maxGain = Math.max(...rows.map(r => r.Gain || 0));
-    const maxDD = Math.max(...rows.map(r => r.Drawdown || 0));
-
-    if (chartInstance) {
-      chartInstance.destroy();
-    }
-
-    chartInstance = new Chart(canvas.getContext("2d"), {
+    chartInstance = new Chart(canvas, {
       type: "scatter",
       data: { datasets },
       options: {
         responsive: true,
-        maintainAspectRatio: false,
         scales: {
           x: {
-            title: { display: true, text: "Drawdown (€)", color: "#e5e7eb" },
-            ticks: { color: "#9ca3af" },
-            grid: { color: "rgba(148,163,184,0.18)" },
-            suggestedMin: 0,
-            suggestedMax: maxDD * 1.1
+            title: { display: true, text: "Drawdown (€)" },
+            grid: { color: getComputedStyle(document.documentElement).getPropertyValue("--chart-grid").trim() },
+            ticks: { color: getComputedStyle(document.documentElement).getPropertyValue("--chart-axis").trim() }
           },
           y: {
-            title: { display: true, text: "Gain (€)", color: "#e5e7eb" },
-            ticks: { color: "#9ca3af" },
-            grid: { color: "rgba(148,163,184,0.15)" },
-            suggestedMin: 0,
-            suggestedMax: maxGain * 1.1
+            title: { display: true, text: "Gain (€)" },
+            grid: { color: getComputedStyle(document.documentElement).getPropertyValue("--chart-grid").trim() },
+            ticks: { color: getComputedStyle(document.documentElement).getPropertyValue("--chart-axis").trim() }
           }
         },
         plugins: {
-          legend: { display: false },
+          legend: { display:false },
           tooltip: {
-            callbacks: {
-              label: (ctx) => {
-                const r = rows[ctx.dataIndex];
-                if (!r) return `Gain: ${ctx.parsed.y}, DD: ${ctx.parsed.x}`;
-                return `${r.Actif} — Gain: ${fmt(r.Gain)} €, DD: ${fmt(r.Drawdown)} €`;
-              }
+            callbacks:{
+              label: ctx => `Gain: ${ctx.parsed.y}€, DD: ${ctx.parsed.x}€`
             }
           }
         }
@@ -593,9 +754,42 @@
     });
   }
 
-  /* -------------------------------
-    Simulation (REST)
-  -------------------------------- */
+  function fillMainStats(row) {
+    instrumentEl.textContent = row.Actif ?? "–";
+    gainEl.textContent = money(row.Gain);
+    ddEl.textContent = money(row.Drawdown);
+    gainDdEl.textContent = row.Sharpe != null ? row.Sharpe.toFixed(2) : "–";
+    winEl.textContent = pct(row.pGagnant);
+    tradesEl.textContent = fmt(row.NbTrade);
+    riskEl.textContent = row.pRisque != null ? row.pRisque.toFixed(2) : "–";
+  }
+
+  function renderTopTable(rows, bestIndex) {
+    topTableBody.innerHTML = "";
+    const sorted = [...rows];
+    if (currentObjectif === "serenite") {
+      sorted.sort((a,b)=>(b.Sharpe ?? -Infinity) - (a.Sharpe ?? -Infinity));
+    } else {
+      sorted.sort((a,b)=>(b.Gain ?? -Infinity) - (a.Gain ?? -Infinity));
+    }
+    const top = sorted.slice(0,5);
+    top.forEach(row => {
+      const originalIndex = rows.indexOf(row);
+      const tr = document.createElement("tr");
+      tr.dataset.index = originalIndex;
+      if (originalIndex === bestIndex) tr.classList.add("selected");
+      tr.innerHTML = `
+        <td>${row.Actif ?? "–"}</td>
+        <td>${money(row.Gain)}</td>
+        <td>${money(row.Drawdown)}</td>
+        <td>${row.Sharpe != null ? row.Sharpe.toFixed(2) : "–"}</td>
+        <td>${row.pGagnant != null ? row.pGagnant.toFixed(1) + "%" : "–"}</td>
+        <td>${row.NbTrade ?? "–"}</td>
+      `;
+      topTableBody.appendChild(tr);
+    });
+  }
+
   async function runSimulation() {
     formError.style.display = "none";
 
@@ -611,75 +805,174 @@
     runBtn.disabled = true;
     runBtn.textContent = "Chargement…";
 
-    const filters = [
-      `Capital=eq.${capital}`,
-      `Drawdown=lte.${ddMax}`,
-      `select=Actif,Capital,Gain,Drawdown,Sharpe,pGagnant,NbTrade,pRisque`
-    ];
-
-    const path = `/rest/v1/${TABLE}?` + filters.join("&");
+    const path = `/rest/v1/${TABLE}?select=*&Capital=eq.${capital}&Drawdown=lte.${ddMax}`;
 
     try {
-      const data = await supaGet(path);
-
+      const rows = await supaGet(path);
       runBtn.disabled = false;
-      runBtn.textContent = "Lancer la simulation";
+      runBtn.textContent = "🚀 Lancer la simulation";
 
-      if (!data || data.length === 0) {
+      lastRows = rows;
+      lastBestIndex = null;
+
+      if (!rows.length) {
         resultsBox.style.display = "none";
         contextPill.style.display = "none";
         noResult.style.display = "block";
-        if (chartInstance) {
-          chartInstance.destroy();
-          chartInstance = null;
-        }
+        if (chartInstance) { chartInstance.destroy(); chartInstance=null; }
+        saveSettings();
         return;
       }
 
-      let best = null;
+      let bestIndex = 0;
       if (currentObjectif === "serenite") {
-        best = data.reduce((acc, r) =>
-          (acc == null || (r.Sharpe ?? -Infinity) > (acc.Sharpe ?? -Infinity)) ? r : acc,
-        null);
+        rows.forEach((r,i)=>{
+          if (rows[bestIndex] == null || (r.Sharpe ?? -Infinity) > (rows[bestIndex].Sharpe ?? -Infinity))
+            bestIndex = i;
+        });
       } else {
-        best = data.reduce((acc, r) =>
-          (acc == null || (r.Gain ?? -Infinity) > (acc.Gain ?? -Infinity)) ? r : acc,
-        null);
+        rows.forEach((r,i)=>{
+          if (rows[bestIndex] == null || (r.Gain ?? -Infinity) > (rows[bestIndex].Gain ?? -Infinity))
+            bestIndex = i;
+        });
       }
+      lastBestIndex = bestIndex;
 
-      instrumentEl.textContent = best.Actif ?? "–";
-      gainEl.textContent = money(best.Gain);
-      ddEl.textContent = money(best.Drawdown);
-      gainDdEl.textContent = (best.Sharpe != null) ? best.Sharpe.toFixed(2) : "–";
-      tradesEl.textContent = fmt(best.NbTrade);
-      tradesSubEl.textContent = best.NbTrade ? `${best.NbTrade} trades totaux` : "";
-      winEl.textContent = (best.pGagnant != null) ? pct(best.pGagnant) : "–";
-      riskEl.textContent = (best.pRisque != null) ? best.pRisque.toFixed(2) : "–";
-
-      instrumentSubEl.textContent = currentObjectif === "serenite"
-        ? "Instrument le plus stable (Sharpe max)."
-        : "Instrument le plus performant (Gain max).";
-
+      fillMainStats(rows[bestIndex]);
       contextPill.style.display = "inline-flex";
-      contextText.textContent = `Capital ${money(capital)} • DD max ${money(ddMax)}`;
+      contextText.textContent = `Capital ${capital}€ • DD max ${ddMax}€`;
 
       noResult.style.display = "none";
       resultsBox.style.display = "block";
 
-      renderChart(data, best);
-
-    } catch (err) {
-      console.error(err);
-      runBtn.disabled = false;
-      runBtn.textContent = "Lancer la simulation";
-      formError.textContent = "Erreur Supabase (REST) : " + err.message;
+      renderChart(rows, bestIndex);
+      renderTopTable(rows, bestIndex);
+      saveSettings();
+    } catch(e) {
+      console.error(e);
+      formError.textContent = "Erreur Supabase : " + e.message;
       formError.style.display = "block";
+      runBtn.disabled = false;
+      runBtn.textContent = "🚀 Lancer la simulation";
     }
   }
 
-  /* Init */
+  objectifToggle.addEventListener("click", e => {
+    const btn = e.target.closest(".toggle-btn");
+    if (!btn) return;
+    currentObjectif = btn.dataset.objectif;
+    document.querySelectorAll(".toggle-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    if (lastRows.length) {
+      // recalcul best + top5 pour le même set
+      let bestIndex = 0;
+      const rows = lastRows;
+      if (currentObjectif === "serenite") {
+        rows.forEach((r,i)=>{
+          if (rows[bestIndex] == null || (r.Sharpe ?? -Infinity) > (rows[bestIndex].Sharpe ?? -Infinity))
+            bestIndex = i;
+        });
+      } else {
+        rows.forEach((r,i)=>{
+          if (rows[bestIndex] == null || (r.Gain ?? -Infinity) > (rows[bestIndex].Gain ?? -Infinity))
+            bestIndex = i;
+        });
+      }
+      lastBestIndex = bestIndex;
+      fillMainStats(rows[bestIndex]);
+      renderChart(rows, bestIndex);
+      renderTopTable(rows, bestIndex);
+      saveSettings();
+    }
+  });
+
+  topTableBody.addEventListener("click", e => {
+    const tr = e.target.closest("tr");
+    if (!tr) return;
+    const idx = Number(tr.dataset.index);
+    if (isNaN(idx) || !lastRows[idx]) return;
+    lastBestIndex = idx;
+    fillMainStats(lastRows[idx]);
+    renderChart(lastRows, idx);
+    topTableBody.querySelectorAll("tr").forEach(row => row.classList.remove("selected"));
+    tr.classList.add("selected");
+  });
+
+  ddSlider.addEventListener("input", () => { syncDD(true); saveSettings(); });
+  ddMaxInput.addEventListener("input", () => { syncDD(false); saveSettings(); });
+  capitalSelect.addEventListener("change", saveSettings);
+
+  function saveSettings() {
+    const settings = {
+      capital: capitalSelect.value || "",
+      dd: ddMaxInput.value || "",
+      objectif: currentObjectif,
+      theme: document.body.classList.contains("dark") ? "dark" : "light"
+    };
+    try {
+      localStorage.setItem("simulateurSettings", JSON.stringify(settings));
+    } catch(e){}
+  }
+
+  function restoreSettings() {
+    try {
+      const raw = localStorage.getItem("simulateurSettings");
+      if (!raw) {
+        syncDD(false);
+        return;
+      }
+      const s = JSON.parse(raw);
+      if (s.capital && [...capitalSelect.options].some(o=>o.value==s.capital)) {
+        capitalSelect.value = s.capital;
+      }
+      if (s.dd) {
+        ddMaxInput.value = s.dd;
+        syncDD(false);
+      } else {
+        syncDD(false);
+      }
+      if (s.objectif) {
+        currentObjectif = s.objectif;
+        document.querySelectorAll(".toggle-btn").forEach(b=>{
+          b.classList.toggle("active", b.dataset.objectif===currentObjectif);
+        });
+      }
+      if (s.theme === "dark") {
+        document.body.classList.add("dark");
+        updateThemeToggle();
+      }
+    } catch(e) {
+      syncDD(false);
+    }
+  }
+
+  function updateThemeToggle() {
+    const isDark = document.body.classList.contains("dark");
+    const icon = themeToggle.querySelector(".theme-toggle-icon");
+    const text = themeToggle.querySelector("span:nth-child(2)");
+    if (isDark) {
+      icon.textContent = "🌙";
+      text.textContent = "Mode sombre";
+    } else {
+      icon.textContent = "🌞";
+      text.textContent = "Mode clair";
+    }
+  }
+
+  themeToggle.addEventListener("click", () => {
+    document.body.classList.toggle("dark");
+    updateThemeToggle();
+    if (lastRows.length) {
+      renderChart(lastRows, lastBestIndex);
+    }
+    saveSettings();
+  });
+
   runBtn.addEventListener("click", runSimulation);
+
   loadCapitalOptions();
+  syncDD(false);
+  updateThemeToggle();
 </script>
 
 </body>
