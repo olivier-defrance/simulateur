@@ -611,6 +611,7 @@
                     <th>DD</th>
                     <th>Sharpe</th>
                     <th>%G</th>
+                    <th>Risque</th>
                     <th>Trades</th>
                   </tr>
                 </thead>
@@ -659,23 +660,26 @@
 
   function fmt(v){ return v==null ? "–" : new Intl.NumberFormat("fr-FR").format(v); }
   function money(v){ return v==null ? "–" : fmt(v)+" €"; }
-  function pct(v){ return v==null ? "–" : v.toFixed(1)+" %"; }
 
-  async function supaGet(path) {
-    const r = await fetch(SUPABASE_URL + path, {
+  /* Pourcentage gagnant = x100 + 2 décimales */
+  function pct(v){ return v==null ? "–" : (v*100).toFixed(2)+" %"; }
+  function supaGet(path) {
+    return fetch(SUPABASE_URL + path, {
       headers: {
         apikey: SUPABASE_KEY,
         Authorization: "Bearer " + SUPABASE_KEY
       }
+    }).then(r => {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
     });
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    return r.json();
   }
 
   async function loadCapitalOptions() {
     try {
       const rows = await supaGet(`/rest/v1/${TABLE}?select=Capital`);
       const uniq = Array.from(new Set(rows.map(r => r.Capital))).sort((a,b)=>a-b);
+
       capitalSelect.innerHTML = "<option value=''>Choisir...</option>";
       uniq.forEach(v => {
         const opt = document.createElement("option");
@@ -683,6 +687,7 @@
         opt.textContent = v + " €";
         capitalSelect.appendChild(opt);
       });
+
       restoreSettings();
     } catch(e) {
       console.error(e);
@@ -715,6 +720,7 @@
       pointBackgroundColor: "#94a3b8"
     }];
 
+    /* Point optimal */
     if (bestIndex != null && rows[bestIndex]) {
       datasets.push({
         label: "Optimal",
@@ -759,33 +765,43 @@
     gainEl.textContent = money(row.Gain);
     ddEl.textContent = money(row.Drawdown);
     gainDdEl.textContent = row.Sharpe != null ? row.Sharpe.toFixed(2) : "–";
+
+    /* pGagnant corrigé */
     winEl.textContent = pct(row.pGagnant);
+
     tradesEl.textContent = fmt(row.NbTrade);
     riskEl.textContent = row.pRisque != null ? row.pRisque.toFixed(2) : "–";
   }
 
   function renderTopTable(rows, bestIndex) {
     topTableBody.innerHTML = "";
+
     const sorted = [...rows];
+
     if (currentObjectif === "serenite") {
       sorted.sort((a,b)=>(b.Sharpe ?? -Infinity) - (a.Sharpe ?? -Infinity));
     } else {
       sorted.sort((a,b)=>(b.Gain ?? -Infinity) - (a.Gain ?? -Infinity));
     }
+
     const top = sorted.slice(0,5);
+
     top.forEach(row => {
       const originalIndex = rows.indexOf(row);
       const tr = document.createElement("tr");
       tr.dataset.index = originalIndex;
       if (originalIndex === bestIndex) tr.classList.add("selected");
+
       tr.innerHTML = `
         <td>${row.Actif ?? "–"}</td>
         <td>${money(row.Gain)}</td>
         <td>${money(row.Drawdown)}</td>
         <td>${row.Sharpe != null ? row.Sharpe.toFixed(2) : "–"}</td>
-        <td>${row.pGagnant != null ? row.pGagnant.toFixed(1) + "%" : "–"}</td>
+        <td>${pct(row.pGagnant)}</td>
+        <td>${row.pRisque != null ? row.pRisque.toFixed(2) : "–"}</td>
         <td>${row.NbTrade ?? "–"}</td>
       `;
+
       topTableBody.appendChild(tr);
     });
   }
@@ -824,21 +840,23 @@
         return;
       }
 
+      /* Détermination du meilleur */
       let bestIndex = 0;
       if (currentObjectif === "serenite") {
         rows.forEach((r,i)=>{
-          if (rows[bestIndex] == null || (r.Sharpe ?? -Infinity) > (rows[bestIndex].Sharpe ?? -Infinity))
+          if ((r.Sharpe ?? -Infinity) > (rows[bestIndex].Sharpe ?? -Infinity))
             bestIndex = i;
         });
       } else {
         rows.forEach((r,i)=>{
-          if (rows[bestIndex] == null || (r.Gain ?? -Infinity) > (rows[bestIndex].Gain ?? -Infinity))
+          if ((r.Gain ?? -Infinity) > (rows[bestIndex].Gain ?? -Infinity))
             bestIndex = i;
         });
       }
       lastBestIndex = bestIndex;
 
       fillMainStats(rows[bestIndex]);
+
       contextPill.style.display = "inline-flex";
       contextText.textContent = `Capital ${capital}€ • DD max ${ddMax}€`;
 
@@ -848,6 +866,7 @@
       renderChart(rows, bestIndex);
       renderTopTable(rows, bestIndex);
       saveSettings();
+
     } catch(e) {
       console.error(e);
       formError.textContent = "Erreur Supabase : " + e.message;
@@ -861,27 +880,29 @@
     const btn = e.target.closest(".toggle-btn");
     if (!btn) return;
     currentObjectif = btn.dataset.objectif;
-    document.querySelectorAll(".toggle-btn").forEach(b => b.classList.remove("active"));
+
+    document.querySelectorAll(".toggle-btn")
+      .forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
+
     if (lastRows.length) {
-      // recalcul best + top5 pour le même set
       let bestIndex = 0;
-      const rows = lastRows;
       if (currentObjectif === "serenite") {
-        rows.forEach((r,i)=>{
-          if (rows[bestIndex] == null || (r.Sharpe ?? -Infinity) > (rows[bestIndex].Sharpe ?? -Infinity))
+        lastRows.forEach((r,i)=>{
+          if ((r.Sharpe ?? -Infinity) > (lastRows[bestIndex].Sharpe ?? -Infinity))
             bestIndex = i;
         });
       } else {
-        rows.forEach((r,i)=>{
-          if (rows[bestIndex] == null || (r.Gain ?? -Infinity) > (rows[bestIndex].Gain ?? -Infinity))
+        lastRows.forEach((r,i)=>{
+          if ((r.Gain ?? -Infinity) > (lastRows[bestIndex].Gain ?? -Infinity))
             bestIndex = i;
         });
       }
+
       lastBestIndex = bestIndex;
-      fillMainStats(rows[bestIndex]);
-      renderChart(rows, bestIndex);
-      renderTopTable(rows, bestIndex);
+      fillMainStats(lastRows[bestIndex]);
+      renderChart(lastRows, bestIndex);
+      renderTopTable(lastRows, bestIndex);
       saveSettings();
     }
   });
@@ -889,12 +910,17 @@
   topTableBody.addEventListener("click", e => {
     const tr = e.target.closest("tr");
     if (!tr) return;
+
     const idx = Number(tr.dataset.index);
     if (isNaN(idx) || !lastRows[idx]) return;
+
     lastBestIndex = idx;
+
     fillMainStats(lastRows[idx]);
     renderChart(lastRows, idx);
-    topTableBody.querySelectorAll("tr").forEach(row => row.classList.remove("selected"));
+
+    topTableBody.querySelectorAll("tr")
+      .forEach(row => row.classList.remove("selected"));
     tr.classList.add("selected");
   });
 
@@ -921,26 +947,28 @@
         syncDD(false);
         return;
       }
+
       const s = JSON.parse(raw);
-      if (s.capital && [...capitalSelect.options].some(o=>o.value==s.capital)) {
+
+      if (s.capital && [...capitalSelect.options].some(o=>o.value==s.capital))
         capitalSelect.value = s.capital;
-      }
+
       if (s.dd) {
         ddMaxInput.value = s.dd;
         syncDD(false);
-      } else {
-        syncDD(false);
-      }
+      } else syncDD(false);
+
       if (s.objectif) {
         currentObjectif = s.objectif;
-        document.querySelectorAll(".toggle-btn").forEach(b=>{
-          b.classList.toggle("active", b.dataset.objectif===currentObjectif);
-        });
+        document.querySelectorAll(".toggle-btn")
+          .forEach(b => b.classList.toggle("active", b.dataset.objectif===currentObjectif));
       }
+
       if (s.theme === "dark") {
         document.body.classList.add("dark");
         updateThemeToggle();
       }
+
     } catch(e) {
       syncDD(false);
     }
@@ -962,9 +990,7 @@
   themeToggle.addEventListener("click", () => {
     document.body.classList.toggle("dark");
     updateThemeToggle();
-    if (lastRows.length) {
-      renderChart(lastRows, lastBestIndex);
-    }
+    if (lastRows.length) renderChart(lastRows, lastBestIndex);
     saveSettings();
   });
 
