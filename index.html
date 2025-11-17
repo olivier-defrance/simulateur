@@ -73,7 +73,7 @@
 <body>
   <div class="app">
     <h1>Simulateur Nono v4.3</h1>
-    <div class="subtitle">Simulation basée sur vos données Supabase.</div>
+    <div class="subtitle">Simulation basée sur vos données Supabase (REST API).</div>
 
     <div class="grid">
 
@@ -98,7 +98,7 @@
           <div class="radios">
             <label class="radio-pill">
               <input type="radio" name="objectif" value="serenite" checked>
-              Sérénité (Gain/DD)
+              Sérénité (Sharpe)
             </label>
             <label class="radio-pill">
               <input type="radio" name="objectif" value="performance">
@@ -163,16 +163,12 @@
     </div>
   </div>
 
-<script type="module">
+<script>
   /* -------------------------------
-     CONFIG SUPABASE
+     CONFIG SUPABASE (REST)
   -------------------------------- */
   const SUPABASE_URL = "https://supabase.olivdef.fr";
   const SUPABASE_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc2MzIxNzYwMCwiZXhwIjo0OTE4ODkxMjAwLCJyb2xlIjoiYW5vbiJ9.UagouIBtD8p_dKm3pJX1J2wgaiDfq0vkNo6Cv6FdCbY";
-
-  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-  const db = createClient(SUPABASE_URL, SUPABASE_KEY);
-
   const TABLE = "DataIntradayGrafV4-3";
 
   /* -------------------------------
@@ -195,35 +191,58 @@
   const noResult = document.getElementById("noResult");
   const contextPill = document.getElementById("contextPill");
 
+  /* -------------------------------
+      Helpers
+  -------------------------------- */
   function fmt(v){return v==null?"–":new Intl.NumberFormat("fr-FR").format(v);}
   function money(v){return v==null?"–":fmt(v)+" €";}
   function pct(v){return v==null?"–":v.toFixed(1)+" %";}
 
-  /* -------------------------------
-    Charger la liste des capitaux
-  -------------------------------- */
-  async function loadCapitalOptions() {
-    const { data, error } = await db
-      .from(TABLE)
-      .select("Capital", { distinct: true })
-      .order("Capital", { ascending: true });
-
-    if (error) {
-      capitalSelect.innerHTML = "<option value=''>Erreur de chargement</option>";
-      return;
-    }
-
-    capitalSelect.innerHTML = "<option value=''>Choisir...</option>";
-    data.forEach(row => {
-      const opt = document.createElement("option");
-      opt.value = row.Capital;
-      opt.textContent = row.Capital + " €";
-      capitalSelect.appendChild(opt);
+  async function supaGet(path) {
+    const resp = await fetch(SUPABASE_URL + path, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: "Bearer " + SUPABASE_KEY,
+        "Content-Type": "application/json"
+      }
     });
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error(`HTTP ${resp.status} – ${text}`);
+    }
+    return resp.json();
   }
 
   /* -------------------------------
-    Simulation
+    Charger la liste des capitaux
+    (REST, dédoublonnage côté client)
+  -------------------------------- */
+  async function loadCapitalOptions() {
+    try {
+      const rows = await supaGet(`/rest/v1/${TABLE}?select=Capital`);
+
+      const set = new Set();
+      rows.forEach(r => {
+        if (typeof r.Capital === "number") set.add(r.Capital);
+      });
+
+      const values = Array.from(set).sort((a,b) => a - b);
+
+      capitalSelect.innerHTML = "<option value=''>Choisir...</option>";
+      values.forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v + " €";
+        capitalSelect.appendChild(opt);
+      });
+    } catch (err) {
+      console.error(err);
+      capitalSelect.innerHTML = "<option value=''>Erreur de chargement</option>";
+    }
+  }
+
+  /* -------------------------------
+    Simulation (REST)
   -------------------------------- */
   async function runSimulation() {
     formError.style.display = "none";
@@ -241,55 +260,58 @@
     runBtn.disabled = true;
     runBtn.textContent = "Chargement…";
 
-    let q = db
-      .from(TABLE)
-      .select("*")
-      .eq("Capital", capital)
-      .lte("Drawdown", ddMax);
+    // Construction de l’URL REST Supabase
+    const filters = [
+      `Capital=eq.${capital}`,
+      `Drawdown=lte.${ddMax}`,
+      `select=*`
+    ];
 
-    if (objectif === "serenite") {
-      q = q.order("Sharpe", { ascending: false });   // <-- Correction ici
-    } else {
-      q = q.order("Gain", { ascending: false });
-    }
+    const orderCol = (objectif === "serenite") ? "Sharpe" : "Gain";
+    filters.push(`order=${orderCol}.desc`);
+    filters.push(`limit=1`);
 
-    q = q.limit(1);
+    const path = `/rest/v1/${TABLE}?` + filters.join("&");
 
-    const { data, error } = await q;
+    try {
+      const data = await supaGet(path);
 
-    runBtn.disabled = false;
-    runBtn.textContent = "Lancer la simulation";
+      runBtn.disabled = false;
+      runBtn.textContent = "Lancer la simulation";
 
-    if (error) {
-      formError.textContent = "Erreur Supabase : " + error.message;
+      if (!data || data.length === 0) {
+        resultsBox.style.display = "none";
+        contextPill.style.display = "none";
+        noResult.style.display = "block";
+        return;
+      }
+
+      const r = data[0];
+
+      instrumentEl.textContent = r.Actif ?? "–";
+      gainEl.textContent = money(r.Gain);
+      ddEl.textContent = money(r.Drawdown);
+      gainDdEl.textContent = (r.Sharpe != null) ? r.Sharpe.toFixed(2) : "–";
+      tradesEl.textContent = fmt(r.NbTrade);
+      winEl.textContent = (r.pGagnant != null) ? pct(r.pGagnant) : "–";
+      riskEl.textContent = (r.pRisque != null) ? r.pRisque.toFixed(2) : "–";
+
+      contextPill.style.display = "inline-flex";
+      contextPill.textContent = `Capital ${money(capital)} • DD max ${money(ddMax)}`;
+
+      noResult.style.display = "none";
+      resultsBox.style.display = "block";
+
+    } catch (err) {
+      console.error(err);
+      runBtn.disabled = false;
+      runBtn.textContent = "Lancer la simulation";
+      formError.textContent = "Erreur Supabase (REST) : " + err.message;
       formError.style.display = "block";
-      return;
     }
-
-    if (!data || data.length === 0) {
-      resultsBox.style.display = "none";
-      contextPill.style.display = "none";
-      noResult.style.display = "block";
-      return;
-    }
-
-    const r = data[0];
-
-    instrumentEl.textContent = r.Actif;
-    gainEl.textContent = money(r.Gain);
-    ddEl.textContent = money(r.Drawdown);
-    gainDdEl.textContent = r.Sharpe?.toFixed(2) ?? "–";
-    tradesEl.textContent = fmt(r.NbTrade);
-    winEl.textContent = pct(r.pGagnant);
-    riskEl.textContent = r.pRisque?.toFixed(2) ?? "–";
-
-    contextPill.style.display = "inline-flex";
-    contextPill.textContent = `Capital ${money(capital)} • DD max ${money(ddMax)}`;
-
-    noResult.style.display = "none";
-    resultsBox.style.display = "block";
   }
 
+  /* Init */
   runBtn.addEventListener("click", runSimulation);
   loadCapitalOptions();
 </script>
