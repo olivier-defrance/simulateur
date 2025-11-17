@@ -163,7 +163,7 @@
 
 <script type="module">
   /* -------------------------------
-     CONFIG SUPABASE (à remplir)
+     CONFIG SUPABASE
   -------------------------------- */
   const SUPABASE_URL = "https://supabase.olivdef.fr";
   const SUPABASE_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc2MzIxNzYwMCwiZXhwIjo0OTE4ODkxMjAwLCJyb2xlIjoiYW5vbiJ9.UagouIBtD8p_dKm3pJX1J2wgaiDfq0vkNo6Cv6FdCbY";
@@ -171,7 +171,7 @@
   import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
   const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  const TABLE = "ComboIntradayGrafV4-3";
+  const TABLE = "DataIntradayGrafV4-3";
 
   /* -------------------------------
     Sélecteurs
@@ -247,10 +247,10 @@
       .from(TABLE)
       .select("*")
       .eq("Capital", capital)
-      .lte("Drawdown max", ddMax);
+      .lte("Drawdown", ddMax);
 
     if (objectif === "serenite") {
-      q = q.order("Gain/DD", { ascending: false });
+      q = q.order("Sharpe", { ascending: false });
     } else {
       q = q.order("Gain", { ascending: false });
     }
@@ -277,13 +277,13 @@
 
     const r = data[0];
 
-    instrumentEl.textContent = r["Instruments"];
+    instrumentEl.textContent = r["Actif"];
     gainEl.textContent = money(r["Gain"]);
-    ddEl.textContent = money(r["Drawdown max"]);
-    gainDdEl.textContent = r["Gain/DD"]?.toFixed(2) ?? "–";
-    tradesEl.textContent = fmt(r["Transactions"]);
-    winEl.textContent = pct(r["% Gagnant"]);
-    riskEl.textContent = r["Risque"]?.toFixed(2) ?? "–";
+    ddEl.textContent = money(r["Drawdown"]);
+    gainDdEl.textContent = r["Sharpe"]?.toFixed(2) ?? "–";
+    tradesEl.textContent = fmt(r["NbTrade"]);
+    winEl.textContent = pct(r["pGagnant"]);
+    riskEl.textContent = r["pRisque"]?.toFixed(2) ?? "–";
 
     contextPill.style.display = "inline-flex";
     contextPill.textContent = `Capital ${money(capital)} • DD max ${money(ddMax)}`;
