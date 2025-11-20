@@ -179,11 +179,11 @@
     .objectif-group {
       display:flex;
       gap:8px;
-      flex-direction:column; /* mobile-friendly (B) */
+      flex-direction:column;
     }
     @media(min-width:600px){
       .objectif-group {
-        flex-direction:row; /* côte à côte sur desktop */
+        flex-direction:row;
       }
     }
     .obj-btn {
@@ -371,11 +371,45 @@ const TABLE = "DataIntradayGrafV4-3";
 
 let currentObjectif = "serenite";
 
-/* Format helpers */
-function pct(v){ return v==null ? "–" : (v*100).toFixed(2)+" %"; }
-function money(v){ return v==null ? "–" : new Intl.NumberFormat("fr-FR").format(v)+" €"; }
+/* ---------------------- FORMAT HELPERS ---------------------- */
 
-/* -------- CAPITAUX -------- */
+/* 1. Pourcentage gagnants = TRONCAGE + virgule */
+function pct(v){
+  if(v == null) return "–";
+  const num = v * 100;
+  const truncated = Math.trunc(num * 100) / 100; 
+  return truncated.toLocaleString("fr-FR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }) + " %";
+}
+
+/* 2. Risque par trade = TRONCAGE + virgule */
+function formatRisk(v){
+  if(v == null) return "–";
+  const trunc = Math.trunc(v * 100) / 100;
+  return trunc.toLocaleString("fr-FR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+/* 3. Sharpe = arrondi normal + virgule */
+function formatSharpe(v){
+  if(v == null) return "–";
+  return v.toLocaleString("fr-FR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+/* 4. Money = standard */
+function money(v){
+  return v==null ? "–" : new Intl.NumberFormat("fr-FR").format(v)+" €";
+}
+
+/* ---------------------- CAPITAUX ---------------------- */
+
 async function loadCapital() {
   try {
     const r = await fetch(`${URL}/rest/v1/${TABLE}?select=Capital`, {
@@ -398,7 +432,8 @@ async function loadCapital() {
   }
 }
 
-/* -------- SLIDER DD -------- */
+/* ---------------------- SLIDER DD ---------------------- */
+
 const ddSlider = document.getElementById("ddSlider");
 const ddMaxInput = document.getElementById("ddMax");
 const ddValueLabel = document.getElementById("ddValueLabel");
@@ -420,7 +455,8 @@ function syncDD(fromSlider) {
 ddSlider.addEventListener("input", () => syncDD(true));
 ddMaxInput.addEventListener("input", () => syncDD(false));
 
-/* -------- OBJECTIF BOUTONS -------- */
+/* ---------------------- OBJECTIF ---------------------- */
+
 const objectifGroup = document.getElementById("objectifGroup");
 objectifGroup.addEventListener("click", (e)=>{
   const btn = e.target.closest(".obj-btn");
@@ -430,7 +466,8 @@ objectifGroup.addEventListener("click", (e)=>{
   btn.classList.add("active");
 });
 
-/* -------- SIMULATION -------- */
+/* ---------------------- SIMULATION ---------------------- */
+
 async function runSim() {
   const capitalSelect = document.getElementById("capital");
   const formError = document.getElementById("formError");
@@ -478,10 +515,10 @@ async function runSim() {
     document.getElementById("instrument").textContent = best.Actif ?? "–";
     document.getElementById("gain").textContent = money(best.Gain);
     document.getElementById("dd").textContent = money(best.Drawdown);
-    document.getElementById("sharpe").textContent = best.Sharpe!=null ? best.Sharpe.toFixed(2) : "–";
+    document.getElementById("sharpe").textContent = formatSharpe(best.Sharpe);
     document.getElementById("win").textContent = pct(best.pGagnant);
     document.getElementById("trades").textContent = best.NbTrade ?? "–";
-    document.getElementById("risk").textContent = best.pRisque!=null ? best.pRisque.toFixed(2) : "–";
+    document.getElementById("risk").textContent = formatRisk(best.pRisque);
 
     resultCard.style.display="block";
 
@@ -493,7 +530,8 @@ async function runSim() {
   }
 }
 
-/* -------- MODE SOMBRE -------- */
+/* ---------------------- MODE SOMBRE ---------------------- */
+
 const themeToggle = document.getElementById("themeToggle");
 const themeIcon = document.getElementById("themeIcon");
 const themeLabel = document.getElementById("themeLabel");
@@ -505,11 +543,11 @@ themeToggle.onclick = ()=>{
   themeLabel.textContent = dark ? "Mode sombre" : "Mode clair";
 };
 
-/* Bind */
+/* ---------------------- INIT ---------------------- */
+
 const runBtn = document.getElementById("runBtn");
 runBtn.onclick = runSim;
 
-/* Init */
 loadCapital();
 syncDD(false);
 
