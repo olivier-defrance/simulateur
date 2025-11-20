@@ -125,6 +125,89 @@
       margin-top:6px;
     }
 
+    /* Slider DD */
+    .slider-row {
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .slider-row input[type="number"] {
+      max-width:110px;
+    }
+    .dd-label-row {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+    }
+    .dd-value {
+      font-size:.85rem;
+      color:var(--muted);
+    }
+
+    input[type="range"] {
+      -webkit-appearance:none;
+      appearance:none;
+      width:100%;
+      height:6px;
+      border-radius:999px;
+      background:#e5e7eb;
+      outline:none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance:none;
+      appearance:none;
+      width:16px;
+      height:16px;
+      border-radius:50%;
+      background:var(--primary);
+      cursor:pointer;
+      border:2px solid #ffffff;
+      box-shadow:0 0 0 3px rgba(59,130,246,0.25);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width:16px;
+      height:16px;
+      border-radius:50%;
+      background:var(--primary);
+      cursor:pointer;
+      border:2px solid #ffffff;
+      box-shadow:0 0 0 3px rgba(59,130,246,0.25);
+    }
+
+    /* Objectif boutons */
+    .objectif-group {
+      display:flex;
+      gap:8px;
+      flex-direction:column; /* mobile-friendly (B) */
+    }
+    @media(min-width:600px){
+      .objectif-group {
+        flex-direction:row; /* côte à côte sur desktop */
+      }
+    }
+    .obj-btn {
+      flex:1;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:white;
+      padding:8px 10px;
+      font-size:.9rem;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      justify-content:center;
+      color:var(--muted);
+    }
+    .obj-btn span.icon { font-size:1rem; }
+    .obj-btn.active {
+      background:var(--primary);
+      color:#ffffff;
+      border-color:var(--primary-dark);
+      box-shadow:0 4px 12px rgba(59,130,246,0.4);
+    }
+
     /* --- GRID RÉSULTATS --- */
 
     .result-grid {
@@ -192,14 +275,30 @@
       <option value="">Chargement…</option>
     </select>
 
-    <label style="margin-top:10px;">Drawdown max accepté (€)</label>
-    <input id="ddMax" type="number" min="0" step="100" value="1500">
+    <div style="margin-top:10px;">
+      <div class="dd-label-row">
+        <label style="margin-bottom:0;">Drawdown max accepté (€)</label>
+        <div id="ddValueLabel" class="dd-value"></div>
+      </div>
+      <div class="slider-row" style="margin-top:4px;">
+        <input id="ddSlider" type="range" min="0" max="10000" step="100" value="1000">
+        <input id="ddMax" type="number" min="0" max="10000" step="100" value="1000">
+      </div>
+    </div>
 
-    <label style="margin-top:10px;">Objectif</label>
-    <select id="objectif">
-      <option value="serenite">🧘‍♂️ Sérénité (Sharpe)</option>
-      <option value="performance">⚡ Performance (Gain)</option>
-    </select>
+    <div style="margin-top:12px;">
+      <label style="margin-bottom:6px;">Objectif</label>
+      <div class="objectif-group" id="objectifGroup">
+        <button type="button" class="obj-btn active" data-objectif="serenite">
+          <span class="icon">🧘‍♂️</span>
+          <span>Sérénité (Sharpe)</span>
+        </button>
+        <button type="button" class="obj-btn" data-objectif="performance">
+          <span class="icon">⚡</span>
+          <span>Performance (Gain)</span>
+        </button>
+      </div>
+    </div>
 
     <button id="runBtn" class="btn">
       <span>🚀</span>
@@ -270,7 +369,9 @@ const URL = "https://supabase.olivdef.fr";
 const KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc2MzIxNzYwMCwiZXhwIjo0OTE4ODkxMjAwLCJyb2xlIjoiYW5vbiJ9.UagouIBtD8p_dKm3pJX1J2wgaiDfq0vkNo6Cv6FdCbY";
 const TABLE = "DataIntradayGrafV4-3";
 
-/* Pourcentage gagnant = x100, 2 décimales */
+let currentObjectif = "serenite";
+
+/* Format helpers */
 function pct(v){ return v==null ? "–" : (v*100).toFixed(2)+" %"; }
 function money(v){ return v==null ? "–" : new Intl.NumberFormat("fr-FR").format(v)+" €"; }
 
@@ -297,17 +398,46 @@ async function loadCapital() {
   }
 }
 
+/* -------- SLIDER DD -------- */
+const ddSlider = document.getElementById("ddSlider");
+const ddMaxInput = document.getElementById("ddMax");
+const ddValueLabel = document.getElementById("ddValueLabel");
+
+function syncDD(fromSlider) {
+  if (fromSlider) {
+    ddMaxInput.value = ddSlider.value;
+  } else {
+    let v = Number(ddMaxInput.value);
+    if (isNaN(v)) v = 0;
+    if (v < 0) v = 0;
+    if (v > 10000) v = 10000;
+    ddMaxInput.value = v;
+    ddSlider.value = v;
+  }
+  ddValueLabel.textContent = ddMaxInput.value ? ddMaxInput.value + " €" : "";
+}
+
+ddSlider.addEventListener("input", () => syncDD(true));
+ddMaxInput.addEventListener("input", () => syncDD(false));
+
+/* -------- OBJECTIF BOUTONS -------- */
+const objectifGroup = document.getElementById("objectifGroup");
+objectifGroup.addEventListener("click", (e)=>{
+  const btn = e.target.closest(".obj-btn");
+  if (!btn) return;
+  currentObjectif = btn.dataset.objectif;
+  document.querySelectorAll(".obj-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+});
+
 /* -------- SIMULATION -------- */
 async function runSim() {
   const capitalSelect = document.getElementById("capital");
-  const ddMaxInput = document.getElementById("ddMax");
-  const objectifEl = document.getElementById("objectif");
   const formError = document.getElementById("formError");
   const resultCard = document.getElementById("resultCard");
 
   const cap = Number(capitalSelect.value);
   const ddMax = Number(ddMaxInput.value);
-  const objectif = objectifEl.value;
 
   if(!cap || !ddMax){
     formError.textContent = "Veuillez remplir le capital et le drawdown max.";
@@ -336,7 +466,7 @@ async function runSim() {
 
     let best = rows[0];
 
-    if(objectif==="serenite"){
+    if(currentObjectif==="serenite"){
       rows.forEach(r=>{ if((r.Sharpe ?? -Infinity) > (best.Sharpe ?? -Infinity)) best=r; });
     } else {
       rows.forEach(r=>{ if((r.Gain ?? -Infinity) > (best.Gain ?? -Infinity)) best=r; });
@@ -381,6 +511,7 @@ runBtn.onclick = runSim;
 
 /* Init */
 loadCapital();
+syncDD(false);
 
 </script>
 </body>
