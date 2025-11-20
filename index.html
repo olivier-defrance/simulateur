@@ -23,7 +23,7 @@
       --bg1:#0f172a;
       --bg2:#020617;
       --card:#0f172acc;
-      --border:#1e293b;
+      --border:#1f2937;
       --text:#f1f5f9;
       --muted:#94a3b8;
       --primary:#38bdf8;
@@ -32,10 +32,11 @@
 
     body {
       margin:0;
-      font-family:system-ui;
+      font-family:system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background:linear-gradient(to bottom,var(--bg1),var(--bg2));
       color:var(--text);
       padding:18px;
+      transition: background .25s ease, color .25s ease;
     }
 
     .app { max-width:900px; margin:auto; }
@@ -43,12 +44,19 @@
     header {
       display:flex;
       justify-content:space-between;
-      align-items:center;
+      align-items:flex-start;
       flex-wrap:wrap;
+      gap:10px;
       margin-bottom:22px;
     }
 
     h1 { margin:0 0 6px; font-size:1.8rem; }
+
+    .subtitle {
+      color:var(--muted);
+      font-size:.9rem;
+      line-height:1.3;
+    }
 
     .theme-toggle {
       cursor:pointer;
@@ -57,6 +65,9 @@
       border:1px solid var(--border);
       border-radius:999px;
       font-size:.85rem;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
     }
 
     .card {
@@ -66,6 +77,14 @@
       border:1px solid var(--border);
       box-shadow:0 6px 18px rgba(0,0,0,.08);
       margin-bottom:22px;
+    }
+
+    .card h2 {
+      margin:0 0 12px;
+      font-size:1.2rem;
+      display:flex;
+      align-items:center;
+      gap:8px;
     }
 
     label { font-size:.9rem; color:var(--muted); display:block; margin-bottom:4px; }
@@ -81,7 +100,7 @@
     input:focus,select:focus{
       outline:none;
       border-color:var(--primary);
-      box-shadow:0 0 0 2px var(--primary + "33");
+      box-shadow:0 0 0 2px rgba(59,130,246,0.3);
     }
 
     .btn {
@@ -92,11 +111,21 @@
       font-size:1rem; font-weight:600;
       border-radius:10px;
       cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
     }
 
     .btn:hover { background:var(--primary-dark); }
 
-    /* --- GRID RÉSULTATS MOBILE-FRIENDLY --- */
+    .error {
+      color:#dc2626;
+      font-size:.85rem;
+      margin-top:6px;
+    }
+
+    /* --- GRID RÉSULTATS --- */
 
     .result-grid {
       display:grid;
@@ -107,10 +136,13 @@
 
     .result-section-label {
       grid-column: 1 / -1;
-      margin-top:10px;
+      margin-top:6px;
       color:var(--muted);
       font-size:.9rem;
       font-weight:600;
+      display:flex;
+      align-items:center;
+      gap:6px;
     }
 
     .stat {
@@ -120,10 +152,15 @@
       border:1px solid var(--border);
     }
 
+    body.dark .stat {
+      background:#020617;
+    }
+
     .stat-label { font-size:.8rem; color:var(--muted); }
     .stat-value { font-size:1.2rem; margin-top:3px; }
 
     @media(max-width:600px){
+      body { padding:12px; }
       .result-grid { grid-template-columns:1fr; }
     }
   </style>
@@ -135,17 +172,20 @@
   <header>
     <div>
       <h1>Simulateur IntradayGraf 2026</h1>
-      <div style="color:var(--muted); font-size:.9rem;">
-        Résultats sur base de l'historique du robot sur l'actif "Allemagne 40 Cash (15mn)"
-        <br>du 01/01/2017 au 10/11/2025
+      <div class="subtitle">
+        Résultats sur base de l'historique du robot sur l'actif « Allemagne 40 Cash (15mn) »<br>
+        sur la période du 01/01/2017 au 10/11/2025
       </div>
     </div>
-    <button id="themeToggle" class="theme-toggle">🌞 Mode clair</button>
+    <button id="themeToggle" class="theme-toggle">
+      <span id="themeIcon">🌞</span>
+      <span id="themeLabel">Mode clair</span>
+    </button>
   </header>
 
   <!-- Paramétrage -->
   <div class="card">
-    <h2>Paramètres</h2>
+    <h2>⚙️ Paramètres</h2>
 
     <label>Capital alloué (€)</label>
     <select id="capital">
@@ -157,24 +197,27 @@
 
     <label style="margin-top:10px;">Objectif</label>
     <select id="objectif">
-      <option value="serenite">Sérénité (Sharpe)</option>
-      <option value="performance">Performance (Gain)</option>
+      <option value="serenite">🧘‍♂️ Sérénité (Sharpe)</option>
+      <option value="performance">⚡ Performance (Gain)</option>
     </select>
 
-    <button id="runBtn" class="btn">Lancer la simulation</button>
-    <div id="formError" style="color:red; margin-top:6px; display:none;"></div>
+    <button id="runBtn" class="btn">
+      <span>🚀</span>
+      <span>Lancer la simulation</span>
+    </button>
+    <div id="formError" class="error" style="display:none;"></div>
   </div>
 
   <!-- Résultats -->
   <div class="card" id="resultCard" style="display:none;">
-    <h2>Paramétrage optimal constaté</h2>
+    <h2>📊 Paramétrage optimal constaté</h2>
     <div style="color:var(--muted); font-size:.85rem;" id="contextText"></div>
 
     <div class="result-grid">
 
       <!-- SECTION 1 : Paramètres robot -->
       <div class="result-section-label">
-        Paramètres à appliquer dans le robot IntradayGraf 2026 :
+        🧩 Paramètres à appliquer dans le robot IntradayGraf 2026 :
       </div>
 
       <div class="stat">
@@ -188,8 +231,8 @@
       </div>
 
       <!-- SECTION 2 : Performance -->
-      <div class="result-section-label">
-        Performance :
+      <div class="result-section-label" style="margin-top:10px;">
+        📈 Performance :
       </div>
 
       <div class="stat">
@@ -224,92 +267,116 @@
 
 <script>
 const URL = "https://supabase.olivdef.fr";
-const KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOi..."; /* remets ta clé complète */
+const KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc2MzIxNzYwMCwiZXhwIjo0OTE4ODkxMjAwLCJyb2xlIjoiYW5vbiJ9.UagouIBtD8p_dKm3pJX1J2wgaiDfq0vkNo6Cv6FdCbY";
 const TABLE = "DataIntradayGrafV4-3";
 
-/* Pourcentage gagnant = x100 */
+/* Pourcentage gagnant = x100, 2 décimales */
 function pct(v){ return v==null ? "–" : (v*100).toFixed(2)+" %"; }
 function money(v){ return v==null ? "–" : new Intl.NumberFormat("fr-FR").format(v)+" €"; }
 
-/* ---- Chargement des capitaux ---- */
+/* -------- CAPITAUX -------- */
 async function loadCapital() {
-  const r = await fetch(`${URL}/rest/v1/${TABLE}?select=Capital`, {
-    headers:{apikey:KEY, Authorization:"Bearer "+KEY}
-  });
-  const rows = await r.json();
-  const caps = [...new Set(rows.map(r=>r.Capital))].sort((a,b)=>a-b);
-  const select = document.getElementById("capital");
-  select.innerHTML = "<option value=''>Choisir…</option>";
-  caps.forEach(c=>{
-    const o=document.createElement("option");
-    o.value=c; o.textContent=c+" €";
-    select.appendChild(o);
-  });
+  try {
+    const r = await fetch(`${URL}/rest/v1/${TABLE}?select=Capital`, {
+      headers:{apikey:KEY, Authorization:"Bearer "+KEY}
+    });
+    if (!r.ok) throw new Error("HTTP "+r.status);
+    const rows = await r.json();
+    const caps = [...new Set(rows.map(r=>r.Capital))].sort((a,b)=>a-b);
+    const select = document.getElementById("capital");
+    select.innerHTML = "<option value=''>Choisir…</option>";
+    caps.forEach(c=>{
+      const o=document.createElement("option");
+      o.value=c; o.textContent=c+" €";
+      select.appendChild(o);
+    });
+  } catch(e) {
+    console.error(e);
+    const select = document.getElementById("capital");
+    select.innerHTML = "<option value=''>Erreur de chargement</option>";
+  }
 }
 
-/* ---- Simulation ---- */
+/* -------- SIMULATION -------- */
 async function runSim() {
+  const capitalSelect = document.getElementById("capital");
+  const ddMaxInput = document.getElementById("ddMax");
+  const objectifEl = document.getElementById("objectif");
+  const formError = document.getElementById("formError");
+  const resultCard = document.getElementById("resultCard");
 
-  const cap = Number(capital.value);
+  const cap = Number(capitalSelect.value);
   const ddMax = Number(ddMaxInput.value);
   const objectif = objectifEl.value;
 
   if(!cap || !ddMax){
-    formError.textContent="Veuillez remplir capital + drawdown max.";
-    formError.style.display="block";
+    formError.textContent = "Veuillez remplir le capital et le drawdown max.";
+    formError.style.display = "block";
+    resultCard.style.display = "none";
     return;
   }
 
-  formError.style.display="none";
+  formError.style.display = "none";
 
   const path = `/rest/v1/${TABLE}?select=*&Capital=eq.${cap}&Drawdown=lte.${ddMax}`;
-  const r = await fetch(URL+path,{
-    headers:{apikey:KEY, Authorization:"Bearer "+KEY}
-  });
-  const rows = await r.json();
 
-  if(!rows.length){
-    resultCard.style.display="none";
-    formError.textContent="Aucun résultat pour cette configuration.";
-    formError.style.display="block";
-    return;
+  try {
+    const r = await fetch(URL+path,{
+      headers:{apikey:KEY, Authorization:"Bearer "+KEY}
+    });
+    if (!r.ok) throw new Error("HTTP "+r.status);
+    const rows = await r.json();
+
+    if(!rows.length){
+      resultCard.style.display="none";
+      formError.textContent="Aucun résultat pour cette configuration.";
+      formError.style.display="block";
+      return;
+    }
+
+    let best = rows[0];
+
+    if(objectif==="serenite"){
+      rows.forEach(r=>{ if((r.Sharpe ?? -Infinity) > (best.Sharpe ?? -Infinity)) best=r; });
+    } else {
+      rows.forEach(r=>{ if((r.Gain ?? -Infinity) > (best.Gain ?? -Infinity)) best=r; });
+    }
+
+    document.getElementById("contextText").textContent =
+      `Capital ${cap} € • Drawdown max accepté ${ddMax} €`;
+
+    document.getElementById("instrument").textContent = best.Actif ?? "–";
+    document.getElementById("gain").textContent = money(best.Gain);
+    document.getElementById("dd").textContent = money(best.Drawdown);
+    document.getElementById("sharpe").textContent = best.Sharpe!=null ? best.Sharpe.toFixed(2) : "–";
+    document.getElementById("win").textContent = pct(best.pGagnant);
+    document.getElementById("trades").textContent = best.NbTrade ?? "–";
+    document.getElementById("risk").textContent = best.pRisque!=null ? best.pRisque.toFixed(2) : "–";
+
+    resultCard.style.display="block";
+
+  } catch(e) {
+    console.error(e);
+    formError.textContent = "Erreur Supabase : " + e.message;
+    formError.style.display = "block";
+    resultCard.style.display = "none";
   }
-
-  let best = rows[0];
-
-  if(objectif==="serenite"){
-    rows.forEach(r=>{ if(r.Sharpe > best.Sharpe) best=r; });
-  } else {
-    rows.forEach(r=>{ if(r.Gain > best.Gain) best=r; });
-  }
-
-  contextText.textContent = `Capital ${cap} € • DD max ${ddMax} €`;
-
-  instrument.textContent = best.Actif;
-  gain.textContent = money(best.Gain);
-  dd.textContent = money(best.Drawdown);
-  sharpe.textContent = best.Sharpe?.toFixed(2) ?? "–";
-  win.textContent = pct(best.pGagnant);
-  trades.textContent = best.NbTrade ?? "–";
-  risk.textContent = best.pRisque?.toFixed(2);
-
-  resultCard.style.display="block";
 }
 
-/* ---- Mode sombre ---- */
+/* -------- MODE SOMBRE -------- */
+const themeToggle = document.getElementById("themeToggle");
+const themeIcon = document.getElementById("themeIcon");
+const themeLabel = document.getElementById("themeLabel");
+
 themeToggle.onclick = ()=>{
   document.body.classList.toggle("dark");
-  themeToggle.textContent =
-    document.body.classList.contains("dark")
-    ? "🌙 Mode sombre"
-    : "🌞 Mode clair";
+  const dark = document.body.classList.contains("dark");
+  themeIcon.textContent = dark ? "🌙" : "🌞";
+  themeLabel.textContent = dark ? "Mode sombre" : "Mode clair";
 };
 
 /* Bind */
-const capital = document.getElementById("capital");
-const ddMaxInput = document.getElementById("ddMax");
-const objectifEl = document.getElementById("objectif");
-
+const runBtn = document.getElementById("runBtn");
 runBtn.onclick = runSim;
 
 /* Init */
