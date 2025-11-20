@@ -2,1004 +2,319 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Simulateur Nono v4.3</title>
+  <title>Simulateur IntradayGraf 2026</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <!-- Chart.js pour le graphique (REST-friendly, pas de modules) -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     * { box-sizing: border-box; }
 
     :root {
-      --bg-gradient-top: #e0f2fe;
-      --bg-gradient-bottom: #f8fafc;
-
-      --card-bg: #ffffffee;
-      --card-border: #e2e8f0;
-      --card-shadow: 0 12px 28px rgba(0,0,0,.05);
-
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-
-      --primary: #3b82f6;
-      --primary-dark: #2563eb;
-      --accent: #0ea5e9;
-      --accent-soft: #bae6fd;
-
-      --danger: #dc2626;
-
-      --chip-bg: #cffafe;
-      --chip-border: #7dd3fc;
-
-      --input-bg: #ffffff;
-      --input-border: #cbd5e1;
-      --input-focus-border: #38bdf8;
-      --input-focus-ring: #bae6fd;
-
-      --chart-grid: #e2e8f0;
-      --chart-axis: #475569;
-
-      --stat-bg: #ffffff;
-      --stat-border: #e2e8f0;
-
-      --badge-bg: #bae6fd;
-      --badge-border: #7dd3fc;
-      --badge-text: #0369a1;
+      --bg1:#e0f2fe;
+      --bg2:#f8fafc;
+      --card:#ffffffee;
+      --border:#e2e8f0;
+      --text:#0f172a;
+      --muted:#64748b;
+      --primary:#3b82f6;
+      --primary-dark:#2563eb;
     }
 
-    /* Mode sombre */
     body.dark {
-      --bg-gradient-top: #0f172a;
-      --bg-gradient-bottom: #020617;
-
-      --card-bg: #020617f5;
-      --card-border: #1f2937;
-      --card-shadow: 0 18px 32px rgba(0,0,0,.4);
-
-      --text-main: #e5e7eb;
-      --text-muted: #9ca3af;
-
-      --primary: #38bdf8;
-      --primary-dark: #0284c7;
-      --accent: #22d3ee;
-      --accent-soft: rgba(56,189,248,0.15);
-
-      --danger: #f97373;
-
-      --chip-bg: rgba(15,23,42,0.9);
-      --chip-border: rgba(56,189,248,0.5);
-
-      --input-bg: #020617;
-      --input-border: #1f2937;
-      --input-focus-border: #38bdf8;
-      --input-focus-ring: rgba(56,189,248,0.4);
-
-      --chart-grid: #1f2933;
-      --chart-axis: #cbd5f5;
-
-      --stat-bg: #020617;
-      --stat-border: #1f2937;
-
-      --badge-bg: rgba(8,47,73,0.8);
-      --badge-border: #0ea5e9;
-      --badge-text: #e0f2fe;
+      --bg1:#0f172a;
+      --bg2:#020617;
+      --card:#0f172acc;
+      --border:#1e293b;
+      --text:#f1f5f9;
+      --muted:#94a3b8;
+      --primary:#38bdf8;
+      --primary-dark:#0284c7;
     }
 
     body {
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: linear-gradient(to bottom, var(--bg-gradient-top), var(--bg-gradient-bottom));
-      color: var(--text-main);
-      transition: background .25s ease, color .25s ease;
+      margin:0;
+      font-family:system-ui;
+      background:linear-gradient(to bottom,var(--bg1),var(--bg2));
+      color:var(--text);
+      padding:18px;
     }
 
-    .app {
-      max-width: 1300px;
-      margin: auto;
-      padding: 22px 16px 60px;
-    }
+    .app { max-width:900px; margin:auto; }
 
     header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 14px;
-      margin-bottom: 26px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-bottom:22px;
     }
 
-    .title-block h1 {
-      margin: 0 0 4px;
-      font-size: 1.9rem;
-      color: var(--text-main);
-      font-weight: 700;
-    }
-    .title-block p {
-      margin: 0;
-      color: var(--text-muted);
-      font-size: .9rem;
-    }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .badge {
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: .75rem;
-      color: var(--badge-text);
-      background: var(--badge-bg);
-      border: 1px solid var(--badge-border);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .badge-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #10b981;
-      box-shadow: 0 0 0 3px rgba(34,197,94,.3);
-    }
+    h1 { margin:0 0 6px; font-size:1.8rem; }
 
     .theme-toggle {
-      border-radius: 999px;
-      border: 1px solid var(--card-border);
-      background: var(--card-bg);
-      padding: 6px 10px;
-      cursor: pointer;
-      font-size: .8rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--text-muted);
-      box-shadow: 0 4px 10px rgba(0,0,0,.06);
-    }
-
-    .theme-toggle-icon {
-      font-size: 1rem;
-    }
-
-    .layout {
-      display: grid;
-      grid-template-columns: 1fr 1.3fr;
-      gap: 22px;
+      cursor:pointer;
+      padding:6px 12px;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:999px;
+      font-size:.85rem;
     }
 
     .card {
-      background: var(--card-bg);
-      border-radius: 16px;
-      padding: 18px;
-      border: 1px solid var(--card-border);
-      box-shadow: var(--card-shadow);
-      backdrop-filter: blur(12px);
-      transition: background .25s ease, border-color .25s ease, box-shadow .25s ease;
+      background:var(--card);
+      padding:18px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      box-shadow:0 6px 18px rgba(0,0,0,.08);
+      margin-bottom:22px;
     }
 
-    .card h2 {
-      margin: 0 0 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 1.1rem;
-      color: var(--text-main);
-    }
-
-    .card h2 .subtitle {
-      font-size: .75rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: .06em;
-    }
-
-    .field { margin-bottom: 16px; }
-
-    label {
-      font-size: .85rem;
-      margin-bottom: 4px;
-      color: var(--text-muted);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 6px;
-    }
+    label { font-size:.9rem; color:var(--muted); display:block; margin-bottom:4px; }
 
     input, select {
-      width: 100%;
-      padding: 9px 10px;
-      font-size: .92rem;
-      border-radius: 8px;
-      border: 1px solid var(--input-border);
-      background: var(--input-bg);
-      color: var(--text-main);
-      transition: border-color .15s, box-shadow .15s, background .15s;
-    }
-    input:focus, select:focus {
-      outline: none;
-      border-color: var(--input-focus-border);
-      box-shadow: 0 0 0 2px var(--input-focus-ring);
-      background: var(--card-bg);
+      width:100%; padding:9px;
+      border-radius:8px;
+      border:1px solid var(--border);
+      font-size:1rem;
+      background:white;
     }
 
-    .input-inline {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .slider-wrap {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .slider-wrap input[type="range"] {
-      flex: 1;
-      -webkit-appearance: none;
-      height: 6px;
-      border-radius: 999px;
-      background: #e5e7eb;
-      outline: none;
-    }
-    .slider-wrap input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: var(--primary);
-      cursor: pointer;
-      border: 2px solid #ffffff;
-      box-shadow: 0 0 0 3px rgba(59,130,246,0.25);
-    }
-
-    .toggle-group {
-      display: flex;
-      gap: 6px;
-      padding: 4px;
-      background: rgba(148,163,184,.12);
-      border-radius: 999px;
-      border: 1px solid var(--card-border);
-    }
-
-    .toggle-btn {
-      border: none;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: transparent;
-      font-size: .82rem;
-      cursor: pointer;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: background .15s, color .15s, box-shadow .15s;
-    }
-    .toggle-btn-icon { font-size: .9rem; }
-
-    .toggle-btn.active {
-      background: var(--primary);
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+    input:focus,select:focus{
+      outline:none;
+      border-color:var(--primary);
+      box-shadow:0 0 0 2px var(--primary + "33");
     }
 
     .btn {
-      width: 100%;
-      padding: 10px 16px;
-      margin-top: 12px;
-      border-radius: 999px;
-      border: none;
-      background: var(--primary);
-      color: white;
-      font-size: .95rem;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 6px 18px rgba(59,130,246,0.4);
-      transition: transform .1s, box-shadow .1s, background .15s;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-    .btn:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 20px rgba(59,130,246,0.5);
-      background: var(--primary-dark);
-    }
-    .btn:disabled {
-      opacity: .6;
-      cursor: default;
-      box-shadow: none;
+      margin-top:16px;
+      width:100%; padding:10px;
+      background:var(--primary);
+      color:white; border:none;
+      font-size:1rem; font-weight:600;
+      border-radius:10px;
+      cursor:pointer;
     }
 
-    .error {
-      margin-top: 10px;
-      color: var(--danger);
-      font-size: .8rem;
+    .btn:hover { background:var(--primary-dark); }
+
+    /* --- GRID RÉSULTATS MOBILE-FRIENDLY --- */
+
+    .result-grid {
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:14px;
+      margin-top:14px;
     }
 
-    /* Résultats */
-    .results-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 10px;
-      font-size: .75rem;
-      background: var(--chip-bg);
-      border-radius: 999px;
-      border: 1px solid var(--chip-border);
-      color: var(--badge-text);
-    }
-    .pill-dot {
-      width: 6px;
-      height: 6px;
-      background: var(--accent);
-      border-radius: 50%;
-    }
-
-    #noResult {
-      font-size: .85rem;
-      color: var(--text-muted);
-      margin-top: 10px;
-    }
-
-    .results-grid {
-      display: grid;
-      grid-template-columns: repeat(3,1fr);
-      gap: 12px;
-      margin-top: 8px;
+    .result-section-label {
+      grid-column: 1 / -1;
+      margin-top:10px;
+      color:var(--muted);
+      font-size:.9rem;
+      font-weight:600;
     }
 
     .stat {
-      border-radius: 12px;
-      padding: 12px;
-      background: var(--stat-bg);
-      border: 1px solid var(--stat-border);
-      box-shadow: 0 3px 8px rgba(0,0,0,.04);
-      transition: transform .12s, box-shadow .12s;
-    }
-    .stat:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 5px 12px rgba(0,0,0,.06);
-    }
-    .stat-label {
-      font-size: .75rem;
-      color: var(--text-muted);
-      margin-bottom: 4px;
-    }
-    .stat-value {
-      font-size: 1.1rem;
-      font-weight: 600;
+      background:white;
+      border-radius:10px;
+      padding:12px;
+      border:1px solid var(--border);
     }
 
-    /* Graphique */
-    .chart-card {
-      margin-top: 18px;
-      padding: 14px;
-      border-radius: 14px;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      box-shadow: 0 6px 16px rgba(0,0,0,.06);
-    }
-    .chart-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: .8rem;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .chart-legend {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: .75rem;
-    }
-    .legend-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-    }
-    .legend-dot.all { background: #94a3b8; }
-    .legend-dot.best { background: var(--primary); }
+    .stat-label { font-size:.8rem; color:var(--muted); }
+    .stat-value { font-size:1.2rem; margin-top:3px; }
 
-    canvas { width: 100% !important; max-height: 260px; }
-
-    /* Top 5 */
-    .top-card {
-      margin-top: 16px;
-      padding-top: 10px;
-      border-top: 1px solid rgba(148,163,184,0.3);
+    @media(max-width:600px){
+      .result-grid { grid-template-columns:1fr; }
     }
-    .top-title {
-      font-size: .85rem;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .top-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: .78rem;
-    }
-    .top-table th,
-    .top-table td {
-      padding: 4px 6px;
-      text-align: left;
-    }
-    .top-table th {
-      color: var(--text-muted);
-      font-weight: 500;
-      border-bottom: 1px solid rgba(148,163,184,.4);
-    }
-    .top-table tr {
-      cursor: pointer;
-      transition: background .12s;
-    }
-    .top-table tr:hover {
-      background: rgba(148,163,184,0.16);
-    }
-    .top-table tr.selected {
-      background: rgba(59,130,246,0.12);
-    }
-
-    /* Responsive */
-    @media(max-width: 980px){
-      .layout { grid-template-columns: 1fr; }
-      .results-grid { grid-template-columns: 1fr 1fr; }
-    }
-    @media(max-width: 640px){
-      .results-grid { grid-template-columns: 1fr; }
-    }
-
   </style>
 </head>
 
 <body>
-  <div class="app">
-    <header>
-      <div class="title-block">
-        <h1>Simulateur Nono v4.3</h1>
-        <p>Visualisez l’instrument optimal selon votre capital et votre tolérance au risque.</p>
+<div class="app">
+
+  <header>
+    <div>
+      <h1>Simulateur IntradayGraf 2026</h1>
+      <div style="color:var(--muted); font-size:.9rem;">
+        Résultats sur base de l'historique du robot sur l'actif "Allemagne 40 Cash (15mn)"
+        <br>du 01/01/2017 au 10/11/2025
       </div>
-      <div class="header-right">
-        <button id="themeToggle" class="theme-toggle" type="button">
-          <span class="theme-toggle-icon">🌞</span>
-          <span>Mode clair</span>
-        </button>
-        <div class="badge">
-          <span class="badge-dot"></span>
-          <span>Connecté à Supabase (REST)</span>
-        </div>
+    </div>
+    <button id="themeToggle" class="theme-toggle">🌞 Mode clair</button>
+  </header>
+
+  <!-- Paramétrage -->
+  <div class="card">
+    <h2>Paramètres</h2>
+
+    <label>Capital alloué (€)</label>
+    <select id="capital">
+      <option value="">Chargement…</option>
+    </select>
+
+    <label style="margin-top:10px;">Drawdown max accepté (€)</label>
+    <input id="ddMax" type="number" min="0" step="100" value="1500">
+
+    <label style="margin-top:10px;">Objectif</label>
+    <select id="objectif">
+      <option value="serenite">Sérénité (Sharpe)</option>
+      <option value="performance">Performance (Gain)</option>
+    </select>
+
+    <button id="runBtn" class="btn">Lancer la simulation</button>
+    <div id="formError" style="color:red; margin-top:6px; display:none;"></div>
+  </div>
+
+  <!-- Résultats -->
+  <div class="card" id="resultCard" style="display:none;">
+    <h2>Paramétrage optimal constaté</h2>
+    <div style="color:var(--muted); font-size:.85rem;" id="contextText"></div>
+
+    <div class="result-grid">
+
+      <!-- SECTION 1 : Paramètres robot -->
+      <div class="result-section-label">
+        Paramètres à appliquer dans le robot IntradayGraf 2026 :
       </div>
-    </header>
 
-    <div class="layout">
-      <!-- PARAMÈTRES -->
-      <section class="card">
-        <h2>
-          <span class="subtitle">Paramétrage</span>
-          Choisissez vos contraintes
-        </h2>
+      <div class="stat">
+        <div class="stat-label">Instrument</div>
+        <div id="instrument" class="stat-value">–</div>
+      </div>
 
-        <div class="field">
-          <label for="capital">
-            <span>Capital alloué (€)</span>
-          </label>
-          <select id="capital">
-            <option value="">Chargement...</option>
-          </select>
-        </div>
+      <div class="stat">
+        <div class="stat-label">Risque par trade</div>
+        <div id="risk" class="stat-value">–</div>
+      </div>
 
-        <div class="field">
-          <label for="ddMax">
-            <span>Drawdown max accepté (€)</span>
-            <span id="ddValueLabel"></span>
-          </label>
-          <div class="slider-wrap">
-            <input id="ddSlider" type="range" min="0" max="5000" step="100" value="1500">
-            <input id="ddMax" type="number" min="0" step="100" style="width:90px;" value="1500">
-          </div>
-        </div>
+      <!-- SECTION 2 : Performance -->
+      <div class="result-section-label">
+        Performance :
+      </div>
 
-        <div class="field">
-          <label>Objectif</label>
-          <div class="toggle-group" id="objectifToggle">
-            <button type="button" class="toggle-btn active" data-objectif="serenite">
-              <span class="toggle-btn-icon">🧘‍♂️</span>
-              <span>Sérénité (Sharpe)</span>
-            </button>
-            <button type="button" class="toggle-btn" data-objectif="performance">
-              <span class="toggle-btn-icon">⚡</span>
-              <span>Performance (Gain)</span>
-            </button>
-          </div>
-        </div>
+      <div class="stat">
+        <div class="stat-label">Gain total</div>
+        <div id="gain" class="stat-value">–</div>
+      </div>
 
-        <button id="runBtn" class="btn">
-          <span>🚀 Lancer la simulation</span>
-        </button>
-        <div id="formError" class="error" style="display:none;"></div>
-      </section>
+      <div class="stat">
+        <div class="stat-label">Drawdown max</div>
+        <div id="dd" class="stat-value">–</div>
+      </div>
 
-      <!-- RÉSULTATS + CHART + TOP 5 -->
-      <section class="card">
-        <div class="results-header">
-          <h2>
-            <span class="subtitle">Résultat</span>
-            Instrument optimal
-          </h2>
-          <div id="contextPill" class="pill" style="display:none;">
-            <span class="pill-dot"></span>
-            <span id="contextText"></span>
-          </div>
-        </div>
+      <div class="stat">
+        <div class="stat-label">Gain total / Drawdown max</div>
+        <div id="sharpe" class="stat-value">–</div>
+      </div>
 
-        <div id="noResult">
-          Aucune simulation pour le moment. Choisissez un capital, un drawdown max, puis lancez la simulation.
-        </div>
+      <div class="stat">
+        <div class="stat-label">% trades gagnants</div>
+        <div id="win" class="stat-value">–</div>
+      </div>
 
-        <div id="results" style="display:none;">
+      <div class="stat">
+        <div class="stat-label">Nombre de trades</div>
+        <div id="trades" class="stat-value">–</div>
+      </div>
 
-          <div class="results-grid">
-            <div class="stat">
-              <div class="stat-label">Instrument</div>
-              <div id="instrument" class="stat-value">–</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Gain total</div>
-              <div id="gain" class="stat-value">–</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Drawdown max</div>
-              <div id="dd" class="stat-value">–</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Sharpe</div>
-              <div id="gainDd" class="stat-value">–</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">% gagnant</div>
-              <div id="winrate" class="stat-value">–</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Transactions</div>
-              <div id="trades" class="stat-value">–</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Risque</div>
-              <div id="risk" class="stat-value">–</div>
-            </div>
-          </div>
-
-          <div class="chart-card">
-            <div class="chart-header">
-              <span>Nuage de points : Gain vs Drawdown</span>
-              <div class="chart-legend">
-                <span class="legend-dot all"></span><span>Tous</span>
-                <span class="legend-dot best"></span><span>Optimal</span>
-              </div>
-            </div>
-            <canvas id="resultsChart"></canvas>
-          </div>
-
-          <div class="top-card">
-            <div class="top-title">
-              <span>Top 5 des combinaisons (selon l’objectif)</span>
-              <span style="font-size:.75rem;color:var(--text-muted);">Cliquez une ligne pour la détailler</span>
-            </div>
-            <div style="overflow-x:auto;">
-              <table class="top-table">
-                <thead>
-                  <tr>
-                    <th>Instrument</th>
-                    <th>Gain</th>
-                    <th>DD</th>
-                    <th>Sharpe</th>
-                    <th>%G</th>
-                    <th>Risque</th>
-                    <th>Trades</th>
-                  </tr>
-                </thead>
-                <tbody id="topTableBody"></tbody>
-              </table>
-            </div>
-          </div>
-
-        </div>
-      </section>
     </div>
   </div>
 
+</div>
+
 <script>
-  const SUPABASE_URL = "https://supabase.olivdef.fr";
-  const SUPABASE_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc2MzIxNzYwMCwiZXhwIjo0OTE4ODkxMjAwLCJyb2xlIjoiYW5vbiJ9.UagouIBtD8p_dKm3pJX1J2wgaiDfq0vkNo6Cv6FdCbY";
-  const TABLE = "DataIntradayGrafV4-3";
+const URL = "https://supabase.olivdef.fr";
+const KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOi..."; /* remets ta clé complète */
+const TABLE = "DataIntradayGrafV4-3";
 
-  const capitalSelect = document.getElementById("capital");
-  const ddMaxInput = document.getElementById("ddMax");
-  const ddSlider = document.getElementById("ddSlider");
-  const ddValueLabel = document.getElementById("ddValueLabel");
-  const runBtn = document.getElementById("runBtn");
-  const formError = document.getElementById("formError");
-  const objectifToggle = document.getElementById("objectifToggle");
-  const noResult = document.getElementById("noResult");
-  const resultsBox = document.getElementById("results");
-  const contextPill = document.getElementById("contextPill");
-  const contextText = document.getElementById("contextText");
-  const themeToggle = document.getElementById("themeToggle");
+/* Pourcentage gagnant = x100 */
+function pct(v){ return v==null ? "–" : (v*100).toFixed(2)+" %"; }
+function money(v){ return v==null ? "–" : new Intl.NumberFormat("fr-FR").format(v)+" €"; }
 
-  const instrumentEl = document.getElementById("instrument");
-  const gainEl = document.getElementById("gain");
-  const ddEl = document.getElementById("dd");
-  const gainDdEl = document.getElementById("gainDd");
-  const winEl = document.getElementById("winrate");
-  const tradesEl = document.getElementById("trades");
-  const riskEl = document.getElementById("risk");
-
-  const topTableBody = document.getElementById("topTableBody");
-
-  let currentObjectif = "serenite";
-  let chartInstance = null;
-  let lastRows = [];
-  let lastBestIndex = null;
-
-  function fmt(v){ return v==null ? "–" : new Intl.NumberFormat("fr-FR").format(v); }
-  function money(v){ return v==null ? "–" : fmt(v)+" €"; }
-
-  /* Pourcentage gagnant = x100 + 2 décimales */
-  function pct(v){ return v==null ? "–" : (v*100).toFixed(2)+" %"; }
-  function supaGet(path) {
-    return fetch(SUPABASE_URL + path, {
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: "Bearer " + SUPABASE_KEY
-      }
-    }).then(r => {
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.json();
-    });
-  }
-
-  async function loadCapitalOptions() {
-    try {
-      const rows = await supaGet(`/rest/v1/${TABLE}?select=Capital`);
-      const uniq = Array.from(new Set(rows.map(r => r.Capital))).sort((a,b)=>a-b);
-
-      capitalSelect.innerHTML = "<option value=''>Choisir...</option>";
-      uniq.forEach(v => {
-        const opt = document.createElement("option");
-        opt.value = v;
-        opt.textContent = v + " €";
-        capitalSelect.appendChild(opt);
-      });
-
-      restoreSettings();
-    } catch(e) {
-      console.error(e);
-      capitalSelect.innerHTML = "<option>Erreur de chargement</option>";
-    }
-  }
-
-  function syncDD(fromSlider) {
-    if (fromSlider) {
-      ddMaxInput.value = ddSlider.value;
-    } else {
-      const v = Number(ddMaxInput.value) || 0;
-      ddSlider.value = v;
-    }
-    ddValueLabel.textContent = ddMaxInput.value ? ddMaxInput.value + " €" : "";
-  }
-
-  function renderChart(rows, bestIndex) {
-    const canvas = document.getElementById("resultsChart");
-    if (!canvas) return;
-    if (chartInstance) chartInstance.destroy();
-
-    if (!rows || !rows.length) return;
-
-    const allPoints = rows.map(r => ({ x: r.Drawdown, y: r.Gain }));
-    const datasets = [{
-      label: "Toutes",
-      data: allPoints,
-      pointRadius: 4,
-      pointBackgroundColor: "#94a3b8"
-    }];
-
-    /* Point optimal */
-    if (bestIndex != null && rows[bestIndex]) {
-      datasets.push({
-        label: "Optimal",
-        data: [{ x: rows[bestIndex].Drawdown, y: rows[bestIndex].Gain }],
-        pointRadius: 8,
-        pointBackgroundColor: getComputedStyle(document.documentElement)
-          .getPropertyValue("--primary").trim()
-      });
-    }
-
-    chartInstance = new Chart(canvas, {
-      type: "scatter",
-      data: { datasets },
-      options: {
-        responsive: true,
-        scales: {
-          x: {
-            title: { display: true, text: "Drawdown (€)" },
-            grid: { color: getComputedStyle(document.documentElement).getPropertyValue("--chart-grid").trim() },
-            ticks: { color: getComputedStyle(document.documentElement).getPropertyValue("--chart-axis").trim() }
-          },
-          y: {
-            title: { display: true, text: "Gain (€)" },
-            grid: { color: getComputedStyle(document.documentElement).getPropertyValue("--chart-grid").trim() },
-            ticks: { color: getComputedStyle(document.documentElement).getPropertyValue("--chart-axis").trim() }
-          }
-        },
-        plugins: {
-          legend: { display:false },
-          tooltip: {
-            callbacks:{
-              label: ctx => `Gain: ${ctx.parsed.y}€, DD: ${ctx.parsed.x}€`
-            }
-          }
-        }
-      }
-    });
-  }
-
-  function fillMainStats(row) {
-    instrumentEl.textContent = row.Actif ?? "–";
-    gainEl.textContent = money(row.Gain);
-    ddEl.textContent = money(row.Drawdown);
-    gainDdEl.textContent = row.Sharpe != null ? row.Sharpe.toFixed(2) : "–";
-
-    /* pGagnant corrigé */
-    winEl.textContent = pct(row.pGagnant);
-
-    tradesEl.textContent = fmt(row.NbTrade);
-    riskEl.textContent = row.pRisque != null ? row.pRisque.toFixed(2) : "–";
-  }
-
-  function renderTopTable(rows, bestIndex) {
-    topTableBody.innerHTML = "";
-
-    const sorted = [...rows];
-
-    if (currentObjectif === "serenite") {
-      sorted.sort((a,b)=>(b.Sharpe ?? -Infinity) - (a.Sharpe ?? -Infinity));
-    } else {
-      sorted.sort((a,b)=>(b.Gain ?? -Infinity) - (a.Gain ?? -Infinity));
-    }
-
-    const top = sorted.slice(0,5);
-
-    top.forEach(row => {
-      const originalIndex = rows.indexOf(row);
-      const tr = document.createElement("tr");
-      tr.dataset.index = originalIndex;
-      if (originalIndex === bestIndex) tr.classList.add("selected");
-
-      tr.innerHTML = `
-        <td>${row.Actif ?? "–"}</td>
-        <td>${money(row.Gain)}</td>
-        <td>${money(row.Drawdown)}</td>
-        <td>${row.Sharpe != null ? row.Sharpe.toFixed(2) : "–"}</td>
-        <td>${pct(row.pGagnant)}</td>
-        <td>${row.pRisque != null ? row.pRisque.toFixed(2) : "–"}</td>
-        <td>${row.NbTrade ?? "–"}</td>
-      `;
-
-      topTableBody.appendChild(tr);
-    });
-  }
-
-  async function runSimulation() {
-    formError.style.display = "none";
-
-    const capital = Number(capitalSelect.value);
-    const ddMax = Number(ddMaxInput.value);
-
-    if (!capital || !ddMax) {
-      formError.textContent = "Merci de renseigner le capital et le drawdown max.";
-      formError.style.display = "block";
-      return;
-    }
-
-    runBtn.disabled = true;
-    runBtn.textContent = "Chargement…";
-
-    const path = `/rest/v1/${TABLE}?select=*&Capital=eq.${capital}&Drawdown=lte.${ddMax}`;
-
-    try {
-      const rows = await supaGet(path);
-      runBtn.disabled = false;
-      runBtn.textContent = "🚀 Lancer la simulation";
-
-      lastRows = rows;
-      lastBestIndex = null;
-
-      if (!rows.length) {
-        resultsBox.style.display = "none";
-        contextPill.style.display = "none";
-        noResult.style.display = "block";
-        if (chartInstance) { chartInstance.destroy(); chartInstance=null; }
-        saveSettings();
-        return;
-      }
-
-      /* Détermination du meilleur */
-      let bestIndex = 0;
-      if (currentObjectif === "serenite") {
-        rows.forEach((r,i)=>{
-          if ((r.Sharpe ?? -Infinity) > (rows[bestIndex].Sharpe ?? -Infinity))
-            bestIndex = i;
-        });
-      } else {
-        rows.forEach((r,i)=>{
-          if ((r.Gain ?? -Infinity) > (rows[bestIndex].Gain ?? -Infinity))
-            bestIndex = i;
-        });
-      }
-      lastBestIndex = bestIndex;
-
-      fillMainStats(rows[bestIndex]);
-
-      contextPill.style.display = "inline-flex";
-      contextText.textContent = `Capital ${capital}€ • DD max ${ddMax}€`;
-
-      noResult.style.display = "none";
-      resultsBox.style.display = "block";
-
-      renderChart(rows, bestIndex);
-      renderTopTable(rows, bestIndex);
-      saveSettings();
-
-    } catch(e) {
-      console.error(e);
-      formError.textContent = "Erreur Supabase : " + e.message;
-      formError.style.display = "block";
-      runBtn.disabled = false;
-      runBtn.textContent = "🚀 Lancer la simulation";
-    }
-  }
-
-  objectifToggle.addEventListener("click", e => {
-    const btn = e.target.closest(".toggle-btn");
-    if (!btn) return;
-    currentObjectif = btn.dataset.objectif;
-
-    document.querySelectorAll(".toggle-btn")
-      .forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-
-    if (lastRows.length) {
-      let bestIndex = 0;
-      if (currentObjectif === "serenite") {
-        lastRows.forEach((r,i)=>{
-          if ((r.Sharpe ?? -Infinity) > (lastRows[bestIndex].Sharpe ?? -Infinity))
-            bestIndex = i;
-        });
-      } else {
-        lastRows.forEach((r,i)=>{
-          if ((r.Gain ?? -Infinity) > (lastRows[bestIndex].Gain ?? -Infinity))
-            bestIndex = i;
-        });
-      }
-
-      lastBestIndex = bestIndex;
-      fillMainStats(lastRows[bestIndex]);
-      renderChart(lastRows, bestIndex);
-      renderTopTable(lastRows, bestIndex);
-      saveSettings();
-    }
+/* ---- Chargement des capitaux ---- */
+async function loadCapital() {
+  const r = await fetch(`${URL}/rest/v1/${TABLE}?select=Capital`, {
+    headers:{apikey:KEY, Authorization:"Bearer "+KEY}
   });
-
-  topTableBody.addEventListener("click", e => {
-    const tr = e.target.closest("tr");
-    if (!tr) return;
-
-    const idx = Number(tr.dataset.index);
-    if (isNaN(idx) || !lastRows[idx]) return;
-
-    lastBestIndex = idx;
-
-    fillMainStats(lastRows[idx]);
-    renderChart(lastRows, idx);
-
-    topTableBody.querySelectorAll("tr")
-      .forEach(row => row.classList.remove("selected"));
-    tr.classList.add("selected");
+  const rows = await r.json();
+  const caps = [...new Set(rows.map(r=>r.Capital))].sort((a,b)=>a-b);
+  const select = document.getElementById("capital");
+  select.innerHTML = "<option value=''>Choisir…</option>";
+  caps.forEach(c=>{
+    const o=document.createElement("option");
+    o.value=c; o.textContent=c+" €";
+    select.appendChild(o);
   });
+}
 
-  ddSlider.addEventListener("input", () => { syncDD(true); saveSettings(); });
-  ddMaxInput.addEventListener("input", () => { syncDD(false); saveSettings(); });
-  capitalSelect.addEventListener("change", saveSettings);
+/* ---- Simulation ---- */
+async function runSim() {
 
-  function saveSettings() {
-    const settings = {
-      capital: capitalSelect.value || "",
-      dd: ddMaxInput.value || "",
-      objectif: currentObjectif,
-      theme: document.body.classList.contains("dark") ? "dark" : "light"
-    };
-    try {
-      localStorage.setItem("simulateurSettings", JSON.stringify(settings));
-    } catch(e){}
+  const cap = Number(capital.value);
+  const ddMax = Number(ddMaxInput.value);
+  const objectif = objectifEl.value;
+
+  if(!cap || !ddMax){
+    formError.textContent="Veuillez remplir capital + drawdown max.";
+    formError.style.display="block";
+    return;
   }
 
-  function restoreSettings() {
-    try {
-      const raw = localStorage.getItem("simulateurSettings");
-      if (!raw) {
-        syncDD(false);
-        return;
-      }
+  formError.style.display="none";
 
-      const s = JSON.parse(raw);
-
-      if (s.capital && [...capitalSelect.options].some(o=>o.value==s.capital))
-        capitalSelect.value = s.capital;
-
-      if (s.dd) {
-        ddMaxInput.value = s.dd;
-        syncDD(false);
-      } else syncDD(false);
-
-      if (s.objectif) {
-        currentObjectif = s.objectif;
-        document.querySelectorAll(".toggle-btn")
-          .forEach(b => b.classList.toggle("active", b.dataset.objectif===currentObjectif));
-      }
-
-      if (s.theme === "dark") {
-        document.body.classList.add("dark");
-        updateThemeToggle();
-      }
-
-    } catch(e) {
-      syncDD(false);
-    }
-  }
-
-  function updateThemeToggle() {
-    const isDark = document.body.classList.contains("dark");
-    const icon = themeToggle.querySelector(".theme-toggle-icon");
-    const text = themeToggle.querySelector("span:nth-child(2)");
-    if (isDark) {
-      icon.textContent = "🌙";
-      text.textContent = "Mode sombre";
-    } else {
-      icon.textContent = "🌞";
-      text.textContent = "Mode clair";
-    }
-  }
-
-  themeToggle.addEventListener("click", () => {
-    document.body.classList.toggle("dark");
-    updateThemeToggle();
-    if (lastRows.length) renderChart(lastRows, lastBestIndex);
-    saveSettings();
+  const path = `/rest/v1/${TABLE}?select=*&Capital=eq.${cap}&Drawdown=lte.${ddMax}`;
+  const r = await fetch(URL+path,{
+    headers:{apikey:KEY, Authorization:"Bearer "+KEY}
   });
+  const rows = await r.json();
 
-  runBtn.addEventListener("click", runSimulation);
+  if(!rows.length){
+    resultCard.style.display="none";
+    formError.textContent="Aucun résultat pour cette configuration.";
+    formError.style.display="block";
+    return;
+  }
 
-  loadCapitalOptions();
-  syncDD(false);
-  updateThemeToggle();
+  let best = rows[0];
+
+  if(objectif==="serenite"){
+    rows.forEach(r=>{ if(r.Sharpe > best.Sharpe) best=r; });
+  } else {
+    rows.forEach(r=>{ if(r.Gain > best.Gain) best=r; });
+  }
+
+  contextText.textContent = `Capital ${cap} € • DD max ${ddMax} €`;
+
+  instrument.textContent = best.Actif;
+  gain.textContent = money(best.Gain);
+  dd.textContent = money(best.Drawdown);
+  sharpe.textContent = best.Sharpe?.toFixed(2) ?? "–";
+  win.textContent = pct(best.pGagnant);
+  trades.textContent = best.NbTrade ?? "–";
+  risk.textContent = best.pRisque?.toFixed(2);
+
+  resultCard.style.display="block";
+}
+
+/* ---- Mode sombre ---- */
+themeToggle.onclick = ()=>{
+  document.body.classList.toggle("dark");
+  themeToggle.textContent =
+    document.body.classList.contains("dark")
+    ? "🌙 Mode sombre"
+    : "🌞 Mode clair";
+};
+
+/* Bind */
+const capital = document.getElementById("capital");
+const ddMaxInput = document.getElementById("ddMax");
+const objectifEl = document.getElementById("objectif");
+
+runBtn.onclick = runSim;
+
+/* Init */
+loadCapital();
+
 </script>
-
 </body>
 </html>
